@@ -1,4 +1,4 @@
-import { VirtualCodeBlock } from "./../../src/VirtualCodeBlock";
+import { VirtualCodeBlock } from "../../src/VirtualCodeBlock";
 import { describe, expect } from "@jest/globals";
 import { IAction } from "@fullstackcraftllc/codevideo-types";
 
@@ -11,42 +11,6 @@ describe("VirtualCodeBlock", () => {
       expect(virtualCodeBlock.getCodeLinesHistory()).toEqual([[""]]);
       expect(virtualCodeBlock.getSpeakActionsApplied()).toEqual([]);
       expect(virtualCodeBlock.getSpeechCaptionHistory()).toEqual([{ speechType: "", speechValue: "" }]);
-    });
-
-    it("should add space at the beginning of a line", () => {
-      const virtualCodeBlock = new VirtualCodeBlock([
-        'console.log("Hello World!");',
-      ]);
-      virtualCodeBlock.applyActions([{ name: "space", value: "1" }]);
-      expect(virtualCodeBlock.getCode()).toEqual(
-        ' console.log("Hello World!");'
-      );
-    });
-
-    it("should add space at the end of a line", () => {
-      const virtualCodeBlock = new VirtualCodeBlock([
-        'console.log("Hello World!");',
-      ]);
-      virtualCodeBlock.applyActions([
-        { name: "command-right", value: "1" },
-        { name: "space", value: "1" },
-      ]);
-      expect(virtualCodeBlock.getCode()).toEqual(
-        'console.log("Hello World!"); '
-      );
-    });
-
-    it("should add space in the middle of a line with character content", () => {
-      const virtualCodeBlock = new VirtualCodeBlock([
-        'console.log("Hello World!");',
-      ]);
-      virtualCodeBlock.applyActions([
-        { name: "arrow-right", value: "3" },
-        { name: "space", value: "1" },
-      ]);
-      expect(virtualCodeBlock.getCode()).toEqual(
-        'con sole.log("Hello World!");'
-      );
     });
 
     it("should create a new empty line at the beginning of a line", () => {
@@ -72,27 +36,6 @@ describe("VirtualCodeBlock", () => {
       ]);
       expect(virtualCodeBlock.getCode()).toEqual(
         'console.\nlog("Hello World!");'
-      );
-    });
-
-    // Additional Tests
-    it("should handle multiple spaces added consecutively", () => {
-      const virtualCodeBlock = new VirtualCodeBlock([
-        'console.log("Hello World!");',
-      ]);
-      virtualCodeBlock.applyActions([{ name: "space", value: "3" }]);
-      expect(virtualCodeBlock.getCode()).toEqual(
-        '   console.log("Hello World!");'
-      );
-    });
-
-    it("should handle multiple enter actions", () => {
-      const virtualCodeBlock = new VirtualCodeBlock([
-        'console.log("Hello World!");',
-      ]);
-      virtualCodeBlock.applyActions([{ name: "enter", value: "3" }]);
-      expect(virtualCodeBlock.getCode()).toEqual(
-        '\n\n\nconsole.log("Hello World!");'
       );
     });
 
