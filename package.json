@@ -1,7 +1,7 @@
 {
-  "name": "@fullstackcraftllc/codevideo-virtual-code-block",
-  "version": "1.4.0",
-  "description": "TypeScript class that simulates a code editor environment.",
+  "name": "@fullstackcraftllc/codevideo-virtual-editor",
+  "version": "1.5.0",
+  "description": "TypeScript class that simulates a single editor buffer.",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
@@ -16,10 +16,10 @@
   ],
   "repository": { 
     "type": "git",
-    "url": "https://github.com/codevideo/codevideo-virtual-code-block.git"
+    "url": "https://github.com/codevideo/codevideo-virtual-editor.git"
   },
   "issues": {
-    "url": "https://github.com/codevideo/codevideo-virtual-code-block/issues"
+    "url": "https://github.com/codevideo/codevideo-virtual-editor/issues"
   },
   "author": "Chris Frewin",
   "license": "MIT",

@@ -1,19 +1,19 @@
-import { VirtualCodeBlock } from "../../src/VirtualCodeBlock";
+import { VirtualEditor } from "../../src/VirtualEditor";
 import { describe, expect } from "@jest/globals";
 
-describe("VirtualCodeBlock", () => {
+describe("VirtualEditor", () => {
     describe("Enter Examples", () => {
         it("should handle multiple enter actions", () => {
-            const virtualCodeBlock = new VirtualCodeBlock([
+            const virtualEditor = new VirtualEditor([
                 'console.log("Hello World!");',
             ]);
-            console.log(virtualCodeBlock.getCode());
-            console.log(virtualCodeBlock.getCurrentCaretPosition());
+            console.log(virtualEditor.getCode());
+            console.log(virtualEditor.getCurrentCaretPosition());
 
-            virtualCodeBlock.applyActions([{ name: "enter", value: "3" }]);
-            console.log(virtualCodeBlock.getCode());
-            console.log(virtualCodeBlock.getCurrentCaretPosition());
-            expect(virtualCodeBlock.getCode()).toEqual(`
+            virtualEditor.applyActions([{ name: "enter", value: "3" }]);
+            console.log(virtualEditor.getCode());
+            console.log(virtualEditor.getCurrentCaretPosition());
+            expect(virtualEditor.getCode()).toEqual(`
 
 
 console.log("Hello World!");`
@@ -21,17 +21,17 @@ console.log("Hello World!");`
         });
 
         it("should handle multiple enter actions when there is a highlight", () => {
-            const virtualCodeBlock = new VirtualCodeBlock([
+            const virtualEditor = new VirtualEditor([
                 'console.log("Hello-123 World!");',
             ]);
-            virtualCodeBlock.applyActions([
+            virtualEditor.applyActions([
                 { name: "arrow-right", value: "19" },
                 { name: "shift+arrow-right", value: "3" },
                 { name: "enter", value: "3" },
                 { name: "type-editor", value: "// comment" }
             ]);
-            console.log(virtualCodeBlock.getCode());
-            expect(virtualCodeBlock.getCode()).toEqual(`console.log("Hello-
+            console.log(virtualEditor.getCode());
+            expect(virtualEditor.getCode()).toEqual(`console.log("Hello-
 
 
 // comment World!");`);

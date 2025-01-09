@@ -1,1 +1,1 @@
-export { VirtualCodeBlock } from './VirtualCodeBlock';
+export { VirtualEditor } from './VirtualEditor';

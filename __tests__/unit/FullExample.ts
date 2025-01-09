@@ -1,11 +1,11 @@
-import { VirtualCodeBlock } from "./../../src/VirtualCodeBlock";
+import { VirtualEditor } from "./../../src/VirtualEditor";
 import { describe, expect } from "@jest/globals";
 import { IAction } from "@fullstackcraftllc/codevideo-types";
 
-describe("VirtualCodeBlock", () => {
+describe("VirtualEditor", () => {
   describe("full audit of complex steps", () => {
     it("should have correct state for everything at every step", () => {
-      const virtualCodeBlock = new VirtualCodeBlock([]);
+      const virtualEditor = new VirtualEditor([]);
       const realExampleActions: IAction[] = [
         // 0
         {
@@ -88,9 +88,9 @@ describe("VirtualCodeBlock", () => {
             value: "Console logging is simple, yet powerful and very useful!"
         }
       ];
-      virtualCodeBlock.applyActions(realExampleActions);
+      virtualEditor.applyActions(realExampleActions);
       const dataForAnnotatedFrames =
-        virtualCodeBlock.getDataForAnnotatedFrames();
+        virtualEditor.getDataForAnnotatedFrames();
       // +1 due to initialization
       expect(dataForAnnotatedFrames.length).toEqual(
         realExampleActions.length + 1

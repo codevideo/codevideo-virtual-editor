@@ -1,14 +1,14 @@
-import { VirtualCodeBlock } from "../../src/VirtualCodeBlock";
+import { VirtualEditor } from "../../src/VirtualEditor";
 import { describe, expect } from "@jest/globals";
 import { IAction } from "@fullstackcraftllc/codevideo-types";
 
-describe("VirtualCodeBlock", () => {
+describe("VirtualEditor", () => {
   describe("Highlight Examples", () => {
     it("handles backwards highlight with delete works as expect", () => {
       // arrange
-      const virtualCodeBlock = new VirtualCodeBlock([]);
+      const virtualEditor = new VirtualEditor([]);
       const highlightExampleActions: IAction[] = [
-        // 1 because 0 is initialization within VirtualCodeBlock
+        // 1 because 0 is initialization within VirtualEditor
         {
           name: "type-editor",
           value:
@@ -34,23 +34,23 @@ describe("VirtualCodeBlock", () => {
       ];
 
       // act
-      virtualCodeBlock.applyActions(highlightExampleActions);
+      virtualEditor.applyActions(highlightExampleActions);
 
       // assert - initial highlight should be -1, -1
-      expect(virtualCodeBlock.getHighlightedCodeAtActionIndex(0)).toEqual("");
-      // expect(virtualCodeBlock.getHighlightedCodeAtActionIndex(1)).toEqual("");
+      expect(virtualEditor.getHighlightedCodeAtActionIndex(0)).toEqual("");
+      // expect(virtualEditor.getHighlightedCodeAtActionIndex(1)).toEqual("");
       // assert - highlighted code after 2nd action should be 'def'
-      expect(virtualCodeBlock.getHighlightedCodeAtActionIndex(2)).toEqual("def");
+      expect(virtualEditor.getHighlightedCodeAtActionIndex(2)).toEqual("def");
       // assert - code after 3rd action should be 'abc123'
-      expect(virtualCodeBlock.getCodeAtActionIndex(4)).toEqual("abc123");
-      expect(virtualCodeBlock.getHighlightedCodeAtActionIndex(4)).toEqual("");
+      expect(virtualEditor.getCodeAtActionIndex(4)).toEqual("abc123");
+      expect(virtualEditor.getHighlightedCodeAtActionIndex(4)).toEqual("");
     })
 
     it("handles backwards highlight with enter works as expect", () => {
       // arrange
-      const virtualCodeBlock = new VirtualCodeBlock([]);
+      const virtualEditor = new VirtualEditor([]);
       const highlightExampleActions: IAction[] = [
-        // 1 - because 0 is initialization within VirtualCodeBlock
+        // 1 - because 0 is initialization within VirtualEditor
         {
           name: "type-editor",
           value:
@@ -76,21 +76,21 @@ describe("VirtualCodeBlock", () => {
       ];
 
       // act
-      virtualCodeBlock.applyActions(highlightExampleActions);
+      virtualEditor.applyActions(highlightExampleActions);
 
       // assert - initial highlight should be -1, -1
-      expect(virtualCodeBlock.getHighlightedCodeAtActionIndex(0)).toEqual("");
-      expect(virtualCodeBlock.getHighlightedCodeAtActionIndex(1)).toEqual("");
+      expect(virtualEditor.getHighlightedCodeAtActionIndex(0)).toEqual("");
+      expect(virtualEditor.getHighlightedCodeAtActionIndex(1)).toEqual("");
       // assert - highlighted code after 2nd action should be 'def'
-      expect(virtualCodeBlock.getHighlightedCodeAtActionIndex(2)).toEqual("def");
+      expect(virtualEditor.getHighlightedCodeAtActionIndex(2)).toEqual("def");
       // assert - code after 3rd action should be 'abc\n123'
-      expect(virtualCodeBlock.getCodeAtActionIndex(4)).toEqual(`abc
+      expect(virtualEditor.getCodeAtActionIndex(4)).toEqual(`abc
 123`);
-      expect(virtualCodeBlock.getHighlightedCodeAtActionIndex(4)).toEqual("");
+      expect(virtualEditor.getHighlightedCodeAtActionIndex(4)).toEqual("");
     })
 
     // it("should have correct state for everything at every step", () => {
-    //   const virtualCodeBlock = new VirtualCodeBlock([]);
+    //   const virtualEditor = new VirtualEditor([]);
     //   const highlightExampleActions: IAction[] = [
     //     // 0
     //     {
@@ -137,9 +137,9 @@ describe("VirtualCodeBlock", () => {
     //       value: "There we go, all fixed!",
     //     }
     //   ];
-    //   virtualCodeBlock.applyActions(highlightExampleActions);
+    //   virtualEditor.applyActions(highlightExampleActions);
     //   const dataForAnnotatedFrames =
-    //     virtualCodeBlock.getDataForAnnotatedFrames();
+    //     virtualEditor.getDataForAnnotatedFrames();
     //   // +1 due to initialization
     //   expect(dataForAnnotatedFrames.length).toEqual(
     //     highlightExampleActions.length + 1

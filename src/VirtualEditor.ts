@@ -9,9 +9,9 @@ import {
 } from "@fullstackcraftllc/codevideo-types";
 
 /**
- * Represents a virtual code block that can be manipulated by a series of actions.
+ * Represents a virtual editor that can be manipulated by a series of actions.
  */
-export class VirtualCodeBlock {
+export class VirtualEditor {
   private caretRow = 0; // 'X'
   private caretColumn = 0; // 'Y'
   private highlightStartRow = 0;
@@ -57,7 +57,7 @@ export class VirtualCodeBlock {
   }
 
   /**
-   * Applies a series of actions to the virtual code block.
+   * Applies a series of actions to the virtual editor.
    * @param actions The actions to apply.
    * @returns The code after the actions have been applied.
    */
@@ -70,7 +70,7 @@ export class VirtualCodeBlock {
   }
 
   /**
-   * Applies a single action to the virtual code block.
+   * Applies a single action to the virtual editor.
    * @param action The action to apply.
    * @returns The code after the action has been applied. Note the code can be identical to a previous step if the action applied was not a code action.
    */
@@ -458,16 +458,16 @@ export class VirtualCodeBlock {
   }
 
   /**
-   * Returns the code lines of the virtual code block.
-   * @returns The code lines of the virtual code block.
+   * Returns the code lines of the virtual editor.
+   * @returns The code lines of the virtual editor.
    */
   getCodeLines(): Array<string> {
     return this.codeLines;
   }
 
   /**
-   * Returns the current caret position of the virtual code block.
-   * @returns The current caret position of the virtual code block.
+   * Returns the current caret position of the virtual editor.
+   * @returns The current caret position of the virtual editor.
    */
   getCurrentCaretPosition(): { row: number; column: number } {
     return { row: this.caretRow, column: this.caretColumn };
@@ -508,15 +508,15 @@ export class VirtualCodeBlock {
   }
 
   /**
-   * Returns the current highlight code of the virtual code block.
-   * @returns The current highlight code of the virtual code block.
+   * Returns the current highlight code of the virtual editor.
+   * @returns The current highlight code of the virtual editor.
    */
   getCurrentHighlightedCode(): string {
     return this.currentlyHighlightedCode;
   }
 
   /**
-   * Clears the current highlight code of the virtual code block. (Resets the highlight start row and column to -1)
+   * Clears the current highlight code of the virtual editor. (Resets the highlight start row and column to -1)
    */
   clearCurrentHighlightedCode() {
     this.highlightStartRow = -1;
@@ -525,7 +525,7 @@ export class VirtualCodeBlock {
   }
 
   /**
-   * Sets the current caret position of the virtual code block.
+   * Sets the current caret position of the virtual editor.
    * @param row The row to set the caret position to.
    * @param column The column to set the caret position to.
    */
@@ -535,8 +535,8 @@ export class VirtualCodeBlock {
   }
 
   /**
-   * Gets the actions applied to the virtual code block.
-   * @returns The actions applied to the virtual code block.
+   * Gets the actions applied to the virtual editor.
+   * @returns The actions applied to the virtual editor.
    */
   getActionsApplied(): Array<IAction> {
     return this.actionsApplied;

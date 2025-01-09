@@ -1,91 +1,91 @@
-import { VirtualCodeBlock } from "../../src/VirtualCodeBlock";
+import { VirtualEditor } from "../../src/VirtualEditor";
 import { describe, expect } from "@jest/globals";
 import { IAction } from "@fullstackcraftllc/codevideo-types";
 
-describe("VirtualCodeBlock", () => {
+describe("VirtualEditor", () => {
   describe("applyActions", () => {
     it("should initialize all arrays consistently if the initial code is empty", () => {
-      const virtualCodeBlock = new VirtualCodeBlock([]);
-      expect(virtualCodeBlock.getCodeLines()).toEqual([""]);
-      expect(virtualCodeBlock.getCodeActionsApplied()).toEqual([{ name: "type-editor", value: "" }]);
-      expect(virtualCodeBlock.getCodeLinesHistory()).toEqual([[""]]);
-      expect(virtualCodeBlock.getSpeakActionsApplied()).toEqual([]);
-      expect(virtualCodeBlock.getSpeechCaptionHistory()).toEqual([{ speechType: "", speechValue: "" }]);
+      const virtualEditor = new VirtualEditor([]);
+      expect(virtualEditor.getCodeLines()).toEqual([""]);
+      expect(virtualEditor.getCodeActionsApplied()).toEqual([{ name: "type-editor", value: "" }]);
+      expect(virtualEditor.getCodeLinesHistory()).toEqual([[""]]);
+      expect(virtualEditor.getSpeakActionsApplied()).toEqual([]);
+      expect(virtualEditor.getSpeechCaptionHistory()).toEqual([{ speechType: "", speechValue: "" }]);
     });
 
     it("should create a new empty line at the beginning of a line", () => {
-      const virtualCodeBlock = new VirtualCodeBlock([
+      const virtualEditor = new VirtualEditor([
         'console.log("Hello World!");',
       ]);
-      virtualCodeBlock.applyActions([
+      virtualEditor.applyActions([
         { name: "arrow-up", value: "1" },
         { name: "enter", value: "1" },
       ]);
-      expect(virtualCodeBlock.getCode()).toEqual(
+      expect(virtualEditor.getCode()).toEqual(
         '\nconsole.log("Hello World!");'
       );
     });
 
     it("should split a line with text in the middle when enter is applied", () => {
-      const virtualCodeBlock = new VirtualCodeBlock([
+      const virtualEditor = new VirtualEditor([
         'console.log("Hello World!");',
       ]);
-      virtualCodeBlock.applyActions([
+      virtualEditor.applyActions([
         { name: "arrow-right", value: "8" },
         { name: "enter", value: "1" },
       ]);
-      expect(virtualCodeBlock.getCode()).toEqual(
+      expect(virtualEditor.getCode()).toEqual(
         'console.\nlog("Hello World!");'
       );
     });
 
     it("should handle arrow-down action at the end of code", () => {
-      const virtualCodeBlock = new VirtualCodeBlock([
+      const virtualEditor = new VirtualEditor([
         'console.log("Hello World!");',
       ]);
-      virtualCodeBlock.applyActions([{ name: "arrow-down", value: "1" }]);
-      expect(virtualCodeBlock.getCurrentCaretPosition()).toEqual({
+      virtualEditor.applyActions([{ name: "arrow-down", value: "1" }]);
+      expect(virtualEditor.getCurrentCaretPosition()).toEqual({
         row: 0,
         column: 0,
       });
     });
 
     it("should handle arrow-up action at the beginning of code", () => {
-      const virtualCodeBlock = new VirtualCodeBlock([
+      const virtualEditor = new VirtualEditor([
         'console.log("Hello World!");',
       ]);
-      virtualCodeBlock.applyActions([{ name: "arrow-up", value: "1" }]);
-      expect(virtualCodeBlock.getCurrentCaretPosition()).toEqual({
+      virtualEditor.applyActions([{ name: "arrow-up", value: "1" }]);
+      expect(virtualEditor.getCurrentCaretPosition()).toEqual({
         row: 0,
         column: 0,
       });
     });
 
     it("should bring the caret to the start of the current line with command-left", () => {
-      const virtualCodeBlock = new VirtualCodeBlock([
+      const virtualEditor = new VirtualEditor([
         'console.log("Hello World!");',
       ]);
-      virtualCodeBlock.applyActions([
+      virtualEditor.applyActions([
         { name: "arrow-right", value: "5" },
         { name: "command-left", value: "1" },
       ]);
-      expect(virtualCodeBlock.getCurrentCaretPosition().row).toEqual(0);
-      expect(virtualCodeBlock.getCurrentCaretPosition().column).toEqual(0);
+      expect(virtualEditor.getCurrentCaretPosition().row).toEqual(0);
+      expect(virtualEditor.getCurrentCaretPosition().column).toEqual(0);
     });
 
     it("should bring the caret to the end of the current line with command-right", () => {
       const code = 'console.log("Hello World!");';
-      const virtualCodeBlock = new VirtualCodeBlock([code]);
-      virtualCodeBlock.applyActions([{ name: "command-right", value: "1" }]);
-      expect(virtualCodeBlock.getCurrentCaretPosition()).toEqual({
+      const virtualEditor = new VirtualEditor([code]);
+      virtualEditor.applyActions([{ name: "command-right", value: "1" }]);
+      expect(virtualEditor.getCurrentCaretPosition()).toEqual({
         row: 0,
         column: code.length,
       });
     });
 
     it("should handle writing multiple lines, going back up to the top line, entering a few empty spaces, then going back to the top again and writing some comments", () => {
-      const virtualCodeBlock = new VirtualCodeBlock([], true);
-      virtualCodeBlock.applyActions([
+      const virtualEditor = new VirtualEditor([], [], true);
+      virtualEditor.applyActions([
         { name: "type-editor", value: "const someFunction = () => {" },
         { name: "enter", value: "1" },
         { name: "type-editor", value: "    console.log('hello world!')" },
@@ -99,7 +99,7 @@ describe("VirtualCodeBlock", () => {
         { name: "arrow-down", value: "1" },
         { name: "type-editor", value: "// And here is another" },
       ]);
-      expect(virtualCodeBlock.getCode()).toEqual(
+      expect(virtualEditor.getCode()).toEqual(
         `
 // This is a comment
 // And here is another
@@ -110,7 +110,7 @@ const someFunction = () => {
     });
 
     it("should should have all resulting history arrays as expected", () => {
-      const virtualCodeBlock = new VirtualCodeBlock([], true);
+      const virtualEditor = new VirtualEditor([], [], true);
       const actions: Array<IAction> = [
         { name: "speak-before", value: "Let's get this lesson started" },
         { name: "type-editor", value: "const someFunction = () => {" },
@@ -128,15 +128,15 @@ const someFunction = () => {
         { name: "type-editor", value: "// And here is another" },
         { name: "speak-after", value: "And that's the end of the lesson!" },
       ];
-      virtualCodeBlock.applyActions(actions);
+      virtualEditor.applyActions(actions);
       actions.unshift({ name: "type-editor", value: "" });
-      expect(virtualCodeBlock.getActionsApplied()).toEqual(actions);
-      expect(virtualCodeBlock.getSpeakActionsApplied()).toEqual([
+      expect(virtualEditor.getActionsApplied()).toEqual(actions);
+      expect(virtualEditor.getSpeakActionsApplied()).toEqual([
         { name: "speak-before", value: "Let's get this lesson started" },
         { name: "speak-after", value: "In the middle of a lesson!" },
         { name: "speak-after", value: "And that's the end of the lesson!" },
       ]);
-      expect(virtualCodeBlock.getCodeActionsApplied()).toEqual([
+      expect(virtualEditor.getCodeActionsApplied()).toEqual([
         { name: "type-editor", value: "" },
         { name: "type-editor", value: "const someFunction = () => {" },
         { name: "enter", value: "1" },
@@ -154,15 +154,15 @@ const someFunction = () => {
     });
 
     it("should show code history as expected", () => {
-      const virtualCodeBlock = new VirtualCodeBlock([], true);
-      virtualCodeBlock.applyActions([
+      const virtualEditor = new VirtualEditor([], [], true);
+      virtualEditor.applyActions([
         { name: "type-editor", value: "const someFunction = () => {" },
         { name: "enter", value: "1" },
         { name: "type-editor", value: "    console.log('hello world!')" },
         { name: "enter", value: "1" },
         { name: "type-editor", value: "}" },
       ]);
-      const codeLinesHistory = virtualCodeBlock.getCodeLinesHistory();
+      const codeLinesHistory = virtualEditor.getCodeLinesHistory();
       expect(codeLinesHistory.length).toEqual(6);
       expect(codeLinesHistory[0]).toEqual([""]);
       expect(codeLinesHistory[1]).toEqual(["const someFunction = () => {"]);
@@ -184,58 +184,58 @@ const someFunction = () => {
     });
 
     it("should show two empty lines in codelines after enter is applied", () => {
-      const virtualCodeBlock = new VirtualCodeBlock([], true);
-      virtualCodeBlock.applyActions([{ name: "enter", value: "1" }]);
-      const codeLines = virtualCodeBlock.getCodeLines();
+      const virtualEditor = new VirtualEditor([], [], true);
+      virtualEditor.applyActions([{ name: "enter", value: "1" }]);
+      const codeLines = virtualEditor.getCodeLines();
       expect(codeLines.length).toEqual(2);
       expect(codeLines[0]).toEqual("");
       expect(codeLines[1]).toEqual("");
     });
 
     it("should have the correct final caret position with a step by step example", () => {
-      const virtualCodeBlock = new VirtualCodeBlock([], true);
-      virtualCodeBlock.applyAction(
+      const virtualEditor = new VirtualEditor([], [], true);
+      virtualEditor.applyAction(
         { name: "type-editor", value: "12345" }
       );
-      expect(virtualCodeBlock.getCode()).toEqual("12345");
-      expect(virtualCodeBlock.getCurrentCaretPosition()).toEqual({
+      expect(virtualEditor.getCode()).toEqual("12345");
+      expect(virtualEditor.getCurrentCaretPosition()).toEqual({
         row: 0,
         column: 5, 
       });
-      virtualCodeBlock.applyAction(
+      virtualEditor.applyAction(
         { name: "arrow-left", value: "3" }
       );
-      expect(virtualCodeBlock.getCurrentCaretPosition()).toEqual({
+      expect(virtualEditor.getCurrentCaretPosition()).toEqual({
         row: 0,
         column: 2, 
       });
-      virtualCodeBlock.applyAction(
+      virtualEditor.applyAction(
         { name: "type-editor", value: "abc" }
       );
-      expect(virtualCodeBlock.getCode()).toEqual("12abc345");
-      expect(virtualCodeBlock.getCurrentCaretPosition()).toEqual({
+      expect(virtualEditor.getCode()).toEqual("12abc345");
+      expect(virtualEditor.getCurrentCaretPosition()).toEqual({
         row: 0,
         column: 5, 
       });
     });
 
     it("should have the correct final caret if we type within the middle of a line", () => {
-      const virtualCodeBlock = new VirtualCodeBlock([], true);
-      virtualCodeBlock.applyActions([
+      const virtualEditor = new VirtualEditor([], [], true);
+      virtualEditor.applyActions([
         { name: "type-editor", value: "12345678910" },
         { name: "arrow-left", value: "5" },
         { name: "type-editor", value: "abc" },
       ]);
-      expect(virtualCodeBlock.getCode()).toEqual("123456abc78910");
-      expect(virtualCodeBlock.getCurrentCaretPosition()).toEqual({
+      expect(virtualEditor.getCode()).toEqual("123456abc78910");
+      expect(virtualEditor.getCurrentCaretPosition()).toEqual({
         row: 0,
         column: 9, 
       });
     });
 
     it("should have the correct final caret location after some complex steps", () => {
-      const virtualCodeBlock = new VirtualCodeBlock([], true);
-      virtualCodeBlock.applyActions([
+      const virtualEditor = new VirtualEditor([], [], true);
+      virtualEditor.applyActions([
         {
           name: "speak-before",
           value:
@@ -302,7 +302,7 @@ const someFunction = () => {
           value: "Console logging is simple, yet powerful and very useful!",
         },
       ]);
-      expect(virtualCodeBlock.getCurrentCaretPosition()).toEqual({
+      expect(virtualEditor.getCurrentCaretPosition()).toEqual({
         row: 3,
         column: 4,
       });
@@ -312,22 +312,22 @@ const someFunction = () => {
   describe("getDataForAnnotatedFrames", () => {
 
     it("should work with a single type-editor action", () => {
-      const virtualCodeBlock = new VirtualCodeBlock([], true);
-      virtualCodeBlock.applyActions([{ name: "type-editor", value: "12345" }]);
-      expect(virtualCodeBlock.getActionsApplied()).toEqual([
+      const virtualEditor = new VirtualEditor([], [], true);
+      virtualEditor.applyActions([{ name: "type-editor", value: "12345" }]);
+      expect(virtualEditor.getActionsApplied()).toEqual([
         { name: "type-editor", value: "" },
         { name: "type-editor", value: "12345" },
       ]);
-      expect(virtualCodeBlock.getCodeActionsApplied()).toEqual([
+      expect(virtualEditor.getCodeActionsApplied()).toEqual([
         { name: "type-editor", value: "" },
         { name: "type-editor", value: "12345" },
       ]);
-      expect(virtualCodeBlock.getCode()).toEqual("12345");
-      const codeLinesHistory = virtualCodeBlock.getCodeLinesHistory();
+      expect(virtualEditor.getCode()).toEqual("12345");
+      const codeLinesHistory = virtualEditor.getCodeLinesHistory();
       expect(codeLinesHistory.length).toEqual(2);
       expect(codeLinesHistory[0]).toEqual([""]);
       expect(codeLinesHistory[1]).toEqual(["12345"]);
-      const dataForAnnotatedFrames = virtualCodeBlock.getDataForAnnotatedFrames();
+      const dataForAnnotatedFrames = virtualEditor.getDataForAnnotatedFrames();
       expect(dataForAnnotatedFrames.length).toEqual(2);
       expect(dataForAnnotatedFrames[1].actionApplied).toEqual({
         name: "type-editor",
@@ -339,14 +339,14 @@ const someFunction = () => {
     });
 
     it("should have the correct history for a complex one line example", () => {
-      const virtualCodeBlock = new VirtualCodeBlock([], true);
-      virtualCodeBlock.applyActions([
+      const virtualEditor = new VirtualEditor([], [], true);
+      virtualEditor.applyActions([
         { name: "type-editor", value: "12345678910" },
         { name: "backspace", value: "5" },
         { name: "type-editor", value: "abc" },
       ]);
 
-      const dataForAnnotatedFrames = virtualCodeBlock.getDataForAnnotatedFrames();
+      const dataForAnnotatedFrames = virtualEditor.getDataForAnnotatedFrames();
       expect(dataForAnnotatedFrames.length).toEqual(4);
       expect(dataForAnnotatedFrames[0].actionApplied).toEqual({
         name: "type-editor",
