@@ -1,6 +1,6 @@
 # @fullstackcraft/codevideo-virtual-editor
 
-![NPM Version](https://img.shields.io/npm/v/:fullstackcraftllc/codevideo-virtual-editor)
+![NPM Version](https://img.shields.io/npm/v/@fullstackcraftllc/codevideo-virtual-editor)
 
 `codevideo-virtual-editor` is a TypeScript class that simulates a code editor environment with features like cursor navigation, text insertion, and line manipulation. It provides a flexible interface for applying various code editing actions such as typing, moving the cursor, and executing commands. This lightweight and versatile library is ideal for building educational tools, code playgrounds, and interactive coding environments within web applications.
 
