@@ -537,7 +537,32 @@ export class VirtualEditor {
    * @returns The PHYSICAL current caret position of the virtual editor, (1, 1) being the top left of the editor.
    */
   getCurrentCaretPosition(): { row: number; col: number } {
-    return { row: this.caretRow+1, col: this.caretCol+1 };
+    return { 
+      row: this.caretRow + 1, 
+      col: this.caretCol + 1 
+    };
+  }
+
+  /**
+   * Returns the PHYSICAL current highlight coordinates of the virtual editor, (1, 1) being the top left of the editor.
+   * @returns The PHYSICAL current highlight coordinates of the virtual editor, (1, 1) being the top left of the editor.
+   */
+  getCurrentHighlightCoordinates(): { start: { row: number; col: number }; end: { row: number; col: number } } {
+    if (this.highlightStartRow === -1) {
+      return { start: { row: -1, col: -1 }, end: { row: -1, col: -1 } };
+    }
+
+    const start = {
+      row: this.highlightStartRow + 1,
+      col: this.highlightStartCol + 1,
+    };
+
+    const end = {
+      row: this.caretRow + 1,
+      col: this.caretCol + 1,
+    };
+
+    return { start, end };
   }
 
   // Helper function to calculate highlighted text
