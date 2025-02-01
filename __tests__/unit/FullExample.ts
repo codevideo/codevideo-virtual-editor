@@ -9,82 +9,82 @@ describe("VirtualEditor", () => {
       const realExampleActions: IAction[] = [
         // 0
         {
-          name: "speak-before",
+          name: "author-speak-before",
           value:
             "Let's learn how to use the console.log function in JavaScript!",
         },
         // 1
         {
-          name: "speak-before",
+          name: "author-speak-before",
           value:
             "First, to make it clear that this is a JavaScript file, I'll just put a comment here",
         },
         // 2
         {
-          name: "type-editor",
+          name: "editor-type",
           value: "// index.js",
         },
         // 3
         {
-          name: "enter",
+          name: "editor-enter",
           value: "1",
         },
         // 4
         {
-          name: "speak-before",
+          name: "author-speak-before",
           value:
             "For starters, let's just print 'Hello world!' to the console.",
         },
         // 5
         {
-          name: "type-editor",
+          name: "editor-type",
           value: "console.log('Hello, world!');",
         },
         // 6
         {
-          name: "speak-before",
+          name: "author-speak-before",
           value:
             "and if I wanted to write the value of some variable to the console, I could do that like so:",
         },
         // 7
         {
-          name: "backspace",
+          name: "editor-backspace",
           value: "29",
         },
         // 8
         {
-          name: "type-editor",
+          name: "editor-type",
           value: "const myVariable = 5;",
         },
         // 9
         {
-          name: "enter",
+          name: "editor-enter",
           value: "1",
         },
         // 10
         {
-          name: "type-editor",
+          name: "editor-type",
           value: "console.log(myVariable);",
         },
         // 11
         {
-          name: "speak-before",
+          name: "author-speak-before",
           value:
             "Now, when I run this code, I would expect the value of 'myVariable' to be printed to the console. Something like:",
         },
         // 12
         {
-          name: "enter",
+          name: "editor-enter",
           value: "1",
         },
         // 13
         {
-          name: "type-editor",
+          name: "editor-type",
           value: "// 5",
         },
         // 14
         {
-            name: "speak-before",
+            name: "author-speak-before",
             value: "Console logging is simple, yet powerful and very useful!"
         }
       ];
@@ -98,7 +98,7 @@ describe("VirtualEditor", () => {
 
       // <no index in real steps>: initialization
       expect(dataForAnnotatedFrames[0].actionApplied).toEqual({
-        name: "type-editor",
+        name: "editor-type",
         value: "",
       });
       expect(dataForAnnotatedFrames[0].code).toEqual("");
@@ -159,7 +159,7 @@ describe("VirtualEditor", () => {
     //     }
     //   ]);
     
-        // index 2: type-editor
+        // index 2: editor-type
         expect(dataForAnnotatedFrames[3].actionApplied).toEqual(
           realExampleActions[2]
         );
@@ -189,7 +189,7 @@ describe("VirtualEditor", () => {
           col: 0,
         });
 
-        // index 5: type-editor
+        // index 5: editor-type
         expect(dataForAnnotatedFrames[6].actionApplied).toEqual(
           realExampleActions[5]
         );
@@ -219,7 +219,7 @@ describe("VirtualEditor", () => {
           col: 0,
         });
 
-        // index 8: type-editor
+        // index 8: editor-type
         expect(dataForAnnotatedFrames[9].actionApplied).toEqual(
           realExampleActions[8]
         );
@@ -239,7 +239,7 @@ describe("VirtualEditor", () => {
           col: 0,
         });
 
-        // index 10: type-editor
+        // index 10: editor-type
         expect(dataForAnnotatedFrames[11].actionApplied).toEqual(
           realExampleActions[10]
         );
@@ -269,7 +269,7 @@ describe("VirtualEditor", () => {
           col: 0,
         });
 
-        // index 13: type-editor
+        // index 13: editor-type
         expect(dataForAnnotatedFrames[14].actionApplied).toEqual(
           realExampleActions[13]
         );

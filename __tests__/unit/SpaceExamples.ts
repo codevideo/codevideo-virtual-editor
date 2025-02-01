@@ -7,7 +7,7 @@ describe("VirtualEditor", () => {
             const virtualEditor = new VirtualEditor([
                 'console.log("Hello World!");',
             ]);
-            virtualEditor.applyActions([{ name: "space", value: "1" }]);
+            virtualEditor.applyActions([{ name: "editor-space", value: "1" }]);
             expect(virtualEditor.getCode()).toEqual(
                 ' console.log("Hello World!");'
             );
@@ -18,8 +18,8 @@ describe("VirtualEditor", () => {
                 'console.log("Hello World!");',
             ]);
             virtualEditor.applyActions([
-                { name: "command-right", value: "1" },
-                { name: "space", value: "1" },
+                { name: "editor-command-right", value: "1" },
+                { name: "editor-space", value: "1" },
             ]);
             expect(virtualEditor.getCode()).toEqual(
                 'console.log("Hello World!"); '
@@ -31,8 +31,8 @@ describe("VirtualEditor", () => {
                 'console.log("Hello World!");',
             ]);
             virtualEditor.applyActions([
-                { name: "arrow-right", value: "3" },
-                { name: "space", value: "1" },
+                { name: "editor-arrow-right", value: "3" },
+                { name: "editor-space", value: "1" },
             ]);
             expect(virtualEditor.getCode()).toEqual(
                 'con sole.log("Hello World!");'
@@ -43,7 +43,7 @@ describe("VirtualEditor", () => {
             const virtualEditor = new VirtualEditor([
                 'console.log("Hello World!");',
             ]);
-            virtualEditor.applyActions([{ name: "space", value: "3" }]);
+            virtualEditor.applyActions([{ name: "editor-space", value: "3" }]);
             expect(virtualEditor.getCode()).toEqual(
                 '   console.log("Hello World!");'
             );

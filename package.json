@@ -1,6 +1,6 @@
 {
   "name": "@fullstackcraftllc/codevideo-virtual-editor",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "TypeScript class that simulates a single editor buffer.",
   "type": "module",
   "main": "dist/index.js",
@@ -14,7 +14,7 @@
     "TypeScript",
     "CodeVideo"
   ],
-  "repository": { 
+  "repository": {
     "type": "git",
     "url": "https://github.com/codevideo/codevideo-virtual-editor.git"
   },
@@ -37,6 +37,6 @@
     "typescript": "^5.4.2"
   },
   "peerDependencies": {
-    "@fullstackcraftllc/codevideo-types": "^1.3.1"
+    "@fullstackcraftllc/codevideo-types": "^2.0.3"
   }
 }

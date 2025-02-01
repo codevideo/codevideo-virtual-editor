@@ -1,10 +1,10 @@
 import {
-  CodeAction,
+  EditorAction,
   IAction,
-  SpeakAction,
+  AuthorAction,
   ISpeechCaption,
-  isCodeAction,
-  isSpeakAction,
+  isEditorAction,
+  isAuthorAction,
   isRepeatableAction,
 } from "@fullstackcraftllc/codevideo-types";
 
@@ -12,19 +12,39 @@ import {
  * Represents a virtual editor that can be manipulated by a series of actions.
  */
 export class VirtualEditor {
+  /**
+   * Represents the LOGICAL (0,0) referenced caret row position in the editor.
+   * @private
+   */
   private caretRow = 0; // 'X'
-  private caretColumn = 0; // 'Y'
-  private highlightStartRow = 0;
-  private highlightStartColumn = 0;
+
+  /**
+   * Represents the LOGICAL (0,0) referenced caret column position in the editor.
+   * @private
+   */
+  private caretCol = 0; // 'Y'
+
+  /**
+   * Represents the LOGICAL (0,0) referenced highlight start row position in the editor. -1 represents no highlight.
+   * @private
+   */
+  private highlightStartRow = -1;
+
+  /**
+   * Represents the LOGICAL (0,0) referenced highlight start column position in the editor. -1 represents no highlight.
+   * @private
+   */
+  private highlightStartCol = -1;
+
   private codeLines: Array<string>;
   private actionsApplied: Array<IAction>;
-  private codeActionsApplied: Array<CodeAction>;
-  private speakActionsApplied: Array<SpeakAction>;
+  private editorActionsApplied: Array<EditorAction>;
+  private authorActionsApplied: Array<AuthorAction>;
   private verbose: boolean = false;
   private codeLinesHistory: Array<Array<string>> = [];
   private speechCaptionHistory: Array<ISpeechCaption> = [];
-  private caretPositionHistory: Array<{ row: number; column: number }> = [];
-  private highlightStartPositionHistory: Array<{ row: number; column: number }> = [];
+  private caretPositionHistory: Array<{ row: number; col: number }> = [];
+  private highlightStartPositionHistory: Array<{ row: number; col: number }> = [];
   private currentlyHighlightedCode: string = "";
   private highlightHistory: Array<Array<string>> = [];
 
@@ -36,23 +56,28 @@ export class VirtualEditor {
     // now consistently set the initial state
     this.codeLines = initialCodeLines;
     this.actionsApplied = [
-      { name: "type-editor", value: initialCodeLines.join("\n") },
+      { name: "editor-type", value: initialCodeLines.length === 1 ? initialCodeLines[0] : initialCodeLines.join("\n") },
     ];
-    this.codeActionsApplied = [
-      { name: "type-editor", value: initialCodeLines.join("\n") },
+    this.editorActionsApplied = [
+      { name: "editor-type", value: initialCodeLines.length === 1 ? initialCodeLines[0] : initialCodeLines.join("\n") },
     ];
     this.codeLinesHistory = [];
     this.codeLinesHistory.push(initialCodeLines.slice());
     this.highlightHistory = [];
     this.highlightHistory.push([""]);
-    this.speakActionsApplied = [];
-    this.speechCaptionHistory = [{ speechType: "", speechValue: "" }];
-    this.caretPositionHistory = [{ row: 0, column: 0 }];
-    this.highlightStartPositionHistory = [{ row: -1, column: -1 }];
+    this.authorActionsApplied = [];
+    this.speechCaptionHistory = [];
+    this.caretPositionHistory = [{ row: 0, col: 0 }];
+    this.highlightStartPositionHistory = [{ row: -1, col: -1 }];
 
     // if actions are provided, apply them
     if (actions) {
       this.applyActions(actions);
+    }
+
+    // set verbose if provided
+    if (verbose) {
+      this.verbose = verbose;
     }
   }
 
@@ -83,23 +108,30 @@ export class VirtualEditor {
     }
     this.currentlyHighlightedCode = "";
     const currentLineLength = this.codeLines[this.caretRow].length;
+
+    // in this switch, let the EditorActions and AuthorActions in codevideo-types guide you
     switch (action.name) {
-      case "enter":
+      case "editor-enter":
+        if (this.verbose) {
+          console.log("ENTER ACTION");
+          console.log("this.highlightStartRow: ", this.highlightStartRow);
+          console.log("this.highlightStartCol: ", this.highlightStartCol);
+        }
         if (this.highlightStartRow !== -1) {
           // Get correct start and end positions regardless of selection direction
           const isForwardSelection =
             this.highlightStartRow < this.caretRow ||
             (this.highlightStartRow === this.caretRow &&
-              this.highlightStartColumn <= this.caretColumn);
+              this.highlightStartCol <= this.caretCol);
 
           const startRow = isForwardSelection ? this.highlightStartRow : this.caretRow;
           const endRow = isForwardSelection ? this.caretRow : this.highlightStartRow;
           const startCol = isForwardSelection
-            ? this.highlightStartColumn
-            : this.caretColumn;
+            ? this.highlightStartCol
+            : this.caretCol;
           const endCol = isForwardSelection
-            ? this.caretColumn
-            : this.highlightStartColumn;
+            ? this.caretCol
+            : this.highlightStartCol;
 
           // Delete highlighted text
           const beforeText = this.codeLines[startRow].substring(0, startCol);
@@ -113,26 +145,18 @@ export class VirtualEditor {
             this.codeLines.splice(startRow + 1, endRow - startRow);
           }
 
-          // Insert numTimes blank lines
-          const newLines = Array(numTimes).fill("");
+          // For the new content, first insert an 'enter' for numTimes
+          const newContent = Array(numTimes-1).fill("");
 
-          // Insert afterText at the end of newLines, only if it's not empty
-          if (afterText !== "") {
-            newLines.push(afterText);
-          }
+          // push the afterText to the newContent (works even if it is empty!)
+          newContent.push(afterText);
 
-          // Insert newLines after startRow
-          this.codeLines.splice(startRow + 1, 0, ...newLines);
+          // update caret position to be at the first column of the new line
+          this.caretRow = startRow + numTimes;
+          this.caretCol = 0;
 
-          // if after text is defined, move caret to the start of the last line inserted
-          if (afterText !== "") {
-            this.caretRow = startRow + numTimes + 1;
-            this.caretColumn = 0;
-          } else {
-            // Move caret to the last blank line inserted
-            this.caretRow = startRow + numTimes;
-            this.caretColumn = 0;
-          }
+          // insert newLines into codeLines at caretRow
+          this.codeLines.splice(this.caretRow, 0, ...newContent);
 
           // Clear the highlight after insertion
           this.clearCurrentHighlightedCode();
@@ -140,8 +164,15 @@ export class VirtualEditor {
           // Existing code for handling multiple enters without highlight
           for (let i = 0; i < numTimes; i++) {
             const currentLine = this.codeLines[this.caretRow];
-            const beforeCaret = currentLine.substring(0, this.caretColumn);
-            const afterCaret = currentLine.substring(this.caretColumn);
+            const beforeCaret = currentLine.substring(0, this.caretCol);
+            const afterCaret = currentLine.substring(this.caretCol);
+
+            // log all
+            if (this.verbose) {
+              console.log("currentLine: ", currentLine);
+              console.log("beforeCaret: ", beforeCaret);
+              console.log("afterCaret: ", afterCaret);
+            }
 
             // Update current line to contain only text before caret
             this.codeLines[this.caretRow] = beforeCaret;
@@ -151,17 +182,17 @@ export class VirtualEditor {
 
             // Move caret to start of new line
             this.caretRow++;
-            this.caretColumn = 0;
+            this.caretCol = 0;
           }
         }
         break;
-      case "type-editor":
+      case "editor-type":
         // if highlight is defined, delete everything between the caret position and the highlight position, and insert the typed text at the caret position
         if (this.highlightStartRow !== -1) {
           const startRow = this.highlightStartRow;
-          const startColumn = this.highlightStartColumn;
+          const startColumn = this.highlightStartCol;
           const endRow = this.caretRow;
-          const endColumn = this.caretColumn;
+          const endColumn = this.caretCol;
           if (startRow === endRow) {
             this.codeLines[startRow] =
               this.codeLines[startRow].substring(0, startColumn) +
@@ -173,20 +204,20 @@ export class VirtualEditor {
             this.codeLines.splice(startRow + 1, endRow - startRow);
           }
           this.caretRow = startRow;
-          this.caretColumn = startColumn;
+          this.caretCol = startColumn;
           this.clearCurrentHighlightedCode();
         }
         // with type-editor, the caret is always at the end of the typed text
         const typedStringLength = action.value.length;
         for (let i = 0; i < numTimes; i++) {
           this.codeLines[this.caretRow] =
-            this.codeLines[this.caretRow].substring(0, this.caretColumn) +
+            this.codeLines[this.caretRow].substring(0, this.caretCol) +
             action.value +
-            this.codeLines[this.caretRow].substring(this.caretColumn);
-          this.caretColumn += typedStringLength;
+            this.codeLines[this.caretRow].substring(this.caretCol);
+          this.caretCol += typedStringLength;
         }
         break;
-      case "arrow-down":
+      case "editor-arrow-down":
         // for numTimes, move the caret down if the current row is not the last row
         for (let i = 0; i < numTimes; i++) {
           if (this.caretRow < this.codeLines.length - 1) {
@@ -195,7 +226,7 @@ export class VirtualEditor {
         }
         this.clearCurrentHighlightedCode();
         break;
-      case "arrow-up":
+      case "editor-arrow-up":
         // for numTimes, move the caret up if the current row is not the first row
         for (let i = 0; i < numTimes; i++) {
           if (this.caretRow > 0) {
@@ -204,31 +235,31 @@ export class VirtualEditor {
         }
         this.clearCurrentHighlightedCode();
         break;
-      case "arrow-right":
+      case "editor-arrow-right":
         // for numTimes, move the caret right - if we are at the end of a line and there are more lines below the current line, move to the start of the next line
         for (let i = 0; i < numTimes; i++) {
-          if (this.caretColumn < currentLineLength - 1) {
-            this.caretColumn++;
+          if (this.caretCol < currentLineLength) {
+            this.caretCol++;
           } else if (this.caretRow < this.codeLines.length - 1) {
             this.caretRow++;
-            this.caretColumn = 0;
+            this.caretCol = 0;
           }
         }
         this.clearCurrentHighlightedCode();
         break;
-      case "arrow-left":
+      case "editor-arrow-left":
         // for numTimes, move the caret left - if we are at the start of a line and there are more lines above the current line, move to the end of the previous line
         for (let i = 0; i < numTimes; i++) {
-          if (this.caretColumn > 0) {
-            this.caretColumn--;
+          if (this.caretCol > 0) {
+            this.caretCol--;
           } else if (this.caretRow > 0) {
             this.caretRow--;
-            this.caretColumn = this.codeLines[this.caretRow].length - 1;
+            this.caretCol = this.codeLines[this.caretRow].length - 1;
           }
         }
         this.clearCurrentHighlightedCode();
         break;
-      case "backspace":
+      case "editor-backspace":
         if (this.highlightStartRow !== -1) {
           // Get correct start and end positions regardless of selection direction
           const startRow = Math.min(this.highlightStartRow, this.caretRow);
@@ -236,9 +267,9 @@ export class VirtualEditor {
           const isForwardSelection = this.highlightStartRow < this.caretRow;
 
           const startCol = isForwardSelection ?
-            this.highlightStartColumn : this.caretColumn;
+            this.highlightStartCol : this.caretCol;
           const endCol = isForwardSelection ?
-            this.caretColumn : this.highlightStartColumn;
+            this.caretCol : this.highlightStartCol;
 
           if (startRow === endRow) {
             // Single line deletion
@@ -248,7 +279,7 @@ export class VirtualEditor {
               this.codeLines[startRow].substring(0, start) +
               this.codeLines[startRow].substring(end);
             this.caretRow = startRow;
-            this.caretColumn = start;
+            this.caretCol = start;
           } else {
             // Multi-line deletion
             const firstLineStart = this.codeLines[startRow].substring(0, startCol);
@@ -258,36 +289,36 @@ export class VirtualEditor {
             this.codeLines.splice(startRow + 1, endRow - startRow);
 
             this.caretRow = startRow;
-            this.caretColumn = startCol;
+            this.caretCol = startCol;
           }
           this.clearCurrentHighlightedCode();
         } else {
           // Standard backspace behavior unchanged
           for (let i = 0; i < numTimes; i++) {
-            if (this.caretColumn > 0) {
+            if (this.caretCol > 0) {
               this.codeLines[this.caretRow] =
-                this.codeLines[this.caretRow].substring(0, this.caretColumn - 1) +
-                this.codeLines[this.caretRow].substring(this.caretColumn);
-              this.caretColumn--;
+                this.codeLines[this.caretRow].substring(0, this.caretCol - 1) +
+                this.codeLines[this.caretRow].substring(this.caretCol);
+              this.caretCol--;
             } else if (this.caretRow > 0) {
               const previousLineLength = this.codeLines[this.caretRow - 1].length;
               this.codeLines[this.caretRow - 1] += this.codeLines[this.caretRow];
               this.codeLines.splice(this.caretRow, 1);
               this.caretRow--;
-              this.caretColumn = previousLineLength;
+              this.caretCol = previousLineLength;
             }
           }
         }
         break;
-      case "space":
+      case "editor-space":
         // if highlight is defined, delete everything between the caret position and the highlight position
         if (this.highlightStartRow !== -1) {
           const startRow = Math.min(this.highlightStartRow, this.caretRow);
           const endRow = Math.max(this.highlightStartRow, this.caretRow);
           const startCol = startRow === this.highlightStartRow ?
-            this.highlightStartColumn : this.caretColumn;
+            this.highlightStartCol : this.caretCol;
           const endCol = endRow === this.highlightStartRow ?
-            this.highlightStartColumn : this.caretColumn;
+            this.highlightStartCol : this.caretCol;
 
           if (startRow === endRow) {
             const start = Math.min(startCol, endCol);
@@ -297,7 +328,7 @@ export class VirtualEditor {
               this.codeLines[startRow].substring(end);
             // After deleting selection, put caret at start position
             this.caretRow = startRow;
-            this.caretColumn = start;
+            this.caretCol = start;
           } else {
             // Multi-line case
             const firstLineStart = this.codeLines[startRow].substring(0, startCol);
@@ -307,7 +338,7 @@ export class VirtualEditor {
             this.codeLines.splice(startRow + 1, endRow - startRow);
 
             this.caretRow = startRow;
-            this.caretColumn = startCol;
+            this.caretCol = startCol;
           }
           this.clearCurrentHighlightedCode();
         }
@@ -315,91 +346,127 @@ export class VirtualEditor {
         // Insert spaces one at a time to properly handle the numTimes parameter
         for (let i = 0; i < numTimes; i++) {
           this.codeLines[this.caretRow] =
-            this.codeLines[this.caretRow].substring(0, this.caretColumn) +
+            this.codeLines[this.caretRow].substring(0, this.caretCol) +
             " " +
-            this.codeLines[this.caretRow].substring(this.caretColumn);
-          this.caretColumn++;
+            this.codeLines[this.caretRow].substring(this.caretCol);
+          this.caretCol++;
         }
         break;
-      case "tab":
+      case "editor-tab":
         // for numTimes, insert a tab at the current caret position
         for (let i = 0; i < numTimes; i++) {
           this.codeLines[this.caretRow] =
-            this.codeLines[this.caretRow].substring(0, this.caretColumn) +
+            this.codeLines[this.caretRow].substring(0, this.caretCol) +
             "\t" +
-            this.codeLines[this.caretRow].substring(this.caretColumn);
-          this.caretColumn++;
+            this.codeLines[this.caretRow].substring(this.caretCol);
+          this.caretCol++;
         }
         break;
-      case "command-left":
+      case "editor-command-left":
         // for numTimes, move the caret to the start of the current line if the current caretColumn is not 0
         for (let i = 0; i < numTimes; i++) {
-          if (this.caretColumn > 0) {
-            this.caretColumn = 0;
+          if (this.caretCol > 0) {
+            this.caretCol = 0;
           }
         }
         // Clear any existing highlight when moving cursor
         this.clearCurrentHighlightedCode();
         break;
-      case "command-right":
+      case "editor-command-right":
         // for numTimes, move the caret to the end of the current line 
         for (let i = 0; i < numTimes; i++) {
-          if (this.caretColumn < this.codeLines[this.caretRow].length) {
-            this.caretColumn = this.codeLines[this.caretRow].length;
+          if (this.caretCol < this.codeLines[this.caretRow].length) {
+            this.caretCol = this.codeLines[this.caretRow].length;
           }
         }
         // Clear any existing highlight when moving cursor
         this.clearCurrentHighlightedCode();
         break;
-      case "shift+arrow-right":
+      case "editor-shift+arrow-left":
         // If no highlight exists yet, set the start position
         if (this.highlightStartRow === -1) {
           this.highlightStartRow = this.caretRow;
-          this.highlightStartColumn = this.caretColumn;
-        }
-
-        // Move caret right for numTimes
-        for (let i = 0; i < numTimes; i++) {
-          if (this.caretColumn < this.codeLines[this.caretRow].length) {
-            this.caretColumn++;
-          } else if (this.caretRow < this.codeLines.length - 1) {
-            this.caretRow++;
-            this.caretColumn = 0;
-          }
-        }
-
-        this.currentlyHighlightedCode = this.calculateHighlightedText();
-        break;
-
-
-      case "shift+arrow-left":
-        // If no highlight exists yet, set the start position
-        if (this.highlightStartRow === -1) {
-          this.highlightStartRow = this.caretRow;
-          this.highlightStartColumn = this.caretColumn;
+          this.highlightStartCol = this.caretCol;
         }
 
         // Move caret left for numTimes
         for (let i = 0; i < numTimes; i++) {
-          if (this.caretColumn > 0) {
-            this.caretColumn--;
+          if (this.caretCol > 0) {
+            this.caretCol--;
           } else if (this.caretRow > 0) {
             this.caretRow--;
-            this.caretColumn = this.codeLines[this.caretRow].length;
+            this.caretCol = this.codeLines[this.caretRow].length;
           }
         }
 
         this.currentlyHighlightedCode = this.calculateHighlightedText();
         break;
+      case "editor-shift+arrow-right":
+          // If no highlight exists yet, set the start position
+          if (this.highlightStartRow === -1) {
+            this.highlightStartRow = this.caretRow;
+            this.highlightStartCol = this.caretCol;
+          }
+  
+          // Move caret right for numTimes
+          for (let i = 0; i < numTimes; i++) {
+            if (this.caretCol < this.codeLines[this.caretRow].length) {
+              this.caretCol++;
+            } else if (this.caretRow < this.codeLines.length - 1) {
+              this.caretRow++;
+              this.caretCol = 0;
+            }
+          }
+  
+          this.currentlyHighlightedCode = this.calculateHighlightedText();
+          break;
+      case "editor-shift+arrow-down":
+        // If no highlight exists yet, set the start position
+        if (this.highlightStartRow === -1) {
+          this.highlightStartRow = this.caretRow;
+          this.highlightStartCol = this.caretCol;
+        }
 
-      case "speak-before":
-      case "speak-after":
-      case "speak-during":
-        // known actions, but nothing to do here. they are appended to proper models as
+        // Move caret down for numTimes - if the next line has AT LEAST the same number of columns as the current line, move the caret down to the same column, otherwise move the caret to the end of the next line
+        for (let i = 0; i < numTimes; i++) {
+          if (this.caretRow < this.codeLines.length - 1) {
+            const nextLineLength = this.codeLines[this.caretRow + 1].length;
+            if (this.caretCol < nextLineLength) {
+              this.caretRow++;
+            } else {
+              this.caretRow++;
+              this.caretCol = nextLineLength;
+            }
+          }
+        }
+
+        this.currentlyHighlightedCode = this.calculateHighlightedText();
+        break;
+      case "editor-shift+arrow-up":
+        // If no highlight exists yet, set the start position
+        if (this.highlightStartRow === -1) {
+          this.highlightStartRow = this.caretRow;
+          this.highlightStartCol = this.caretCol;
+        }
+
+        // Move caret up for numTimes - if the previous line has AT LEAST the same number of columns as the current line, move the caret up to the same column, otherwise move the caret to the end of the previous line
+        for (let i = 0; i < numTimes; i++) {
+          if (this.caretRow > 0) {
+            const previousLineLength = this.codeLines[this.caretRow - 1].length;
+            if (this.caretCol < previousLineLength) {
+              this.caretRow--;
+            } else {
+              this.caretRow--;
+              this.caretCol = previousLineLength;
+            }
+          }
+        }
+
+        this.currentlyHighlightedCode = this.calculateHighlightedText();
         break;
       default:
         console.log(
-          `WARNING: Action ${action.name} not recognized. Skipping...`
+          `WARNING: Action ${action.name} not recognized. Skipping... If this is an author or speak action those should eventually anyway be moved to VirtualAuthor - go yell at Chris to fix this.`
         );
         break;
     }
@@ -407,24 +474,19 @@ export class VirtualEditor {
     // ALWAYS append the action to the end of the actionsApplied
     this.actionsApplied.push(action);
 
-    // append code actions to code actions applied
-    if (isCodeAction(action)) {
-      this.codeActionsApplied.push(action);
+    // append editor actions to editor actions applied
+    if (isEditorAction(action)) {
+      this.editorActionsApplied.push(action);
     }
 
-    // append speak actions to speak actions applied
-    if (isSpeakAction(action)) {
-      this.speakActionsApplied.push(action);
+    // TODO: this block right here should be removed completely and captions should be built from leveraging codevideo-virtual-ide
+    // append author actions to author actions applied
+    if (isAuthorAction(action)) {
+      this.authorActionsApplied.push(action);
       // can also push to speechCaptionHistory
       this.speechCaptionHistory.push({
         speechType: action.name,
         speechValue: action.value,
-      });
-    } else {
-      // if its not a speak action, push an empty speechCaption to the history
-      this.speechCaptionHistory.push({
-        speechType: "",
-        speechValue: "",
       });
     }
 
@@ -433,13 +495,13 @@ export class VirtualEditor {
     this.codeLinesHistory.push(codeLinesCopy);
     this.caretPositionHistory.push({
       row: this.caretRow,
-      column: this.caretColumn,
+      col: this.caretCol,
     });
 
     // always append the highlight history, even if it is empty i.e. (-1, -1)
     this.highlightStartPositionHistory.push({
       row: this.highlightStartRow === -1 ? -1 : this.highlightStartRow,
-      column: this.highlightStartColumn === -1 ? -1 : this.highlightStartColumn,
+      col: this.highlightStartCol === -1 ? -1 : this.highlightStartCol,
     });
 
     this.highlightHistory.push(
@@ -450,7 +512,12 @@ export class VirtualEditor {
 
     // If verbose is true, log the action and the current code
     if (this.verbose) {
-      console.log(this.getCodeLines());
+      console.log("PREVIOUS CODE:");
+      console.log(`\`${this.getCodeAtActionIndex(this.actionsApplied.length - 2)}\``);
+      console.log("APPLIED ACTION:");
+      console.log(action);
+      console.log("CURRENT CODE:");
+      console.log(`\`${this.getCodeAtActionIndex(this.actionsApplied.length - 1)}\``);
     }
 
     // Return the code after the action has been applied
@@ -466,21 +533,21 @@ export class VirtualEditor {
   }
 
   /**
-   * Returns the current caret position of the virtual editor.
-   * @returns The current caret position of the virtual editor.
+   * Returns the PHYSICAL current caret position of the virtual editor, (1, 1) being the top left of the editor.
+   * @returns The PHYSICAL current caret position of the virtual editor, (1, 1) being the top left of the editor.
    */
-  getCurrentCaretPosition(): { row: number; column: number } {
-    return { row: this.caretRow, column: this.caretColumn };
+  getCurrentCaretPosition(): { row: number; col: number } {
+    return { row: this.caretRow+1, col: this.caretCol+1 };
   }
 
   // Helper function to calculate highlighted text
-  calculateHighlightedText(): string {
+  private calculateHighlightedText(): string {
     if (this.highlightStartRow === -1) return "";
 
     if (this.caretRow === this.highlightStartRow) {
       // Single line highlight
-      const start = Math.min(this.highlightStartColumn, this.caretColumn);
-      const end = Math.max(this.highlightStartColumn, this.caretColumn);
+      const start = Math.min(this.highlightStartCol, this.caretCol);
+      const end = Math.max(this.highlightStartCol, this.caretCol);
       return this.codeLines[this.caretRow].substring(start, end);
     }
 
@@ -493,11 +560,11 @@ export class VirtualEditor {
     for (let row = startRow; row <= endRow; row++) {
       if (row === startRow) {
         // First line - take from selection start to end of line
-        const startCol = isForwardSelection ? this.highlightStartColumn : this.caretColumn;
+        const startCol = isForwardSelection ? this.highlightStartCol : this.caretCol;
         highlightedLines.push(this.codeLines[row].substring(startCol));
       } else if (row === endRow) {
         // Last line - take from start of line to selection end
-        const endCol = isForwardSelection ? this.caretColumn : this.highlightStartColumn;
+        const endCol = isForwardSelection ? this.caretCol : this.highlightStartCol;
         highlightedLines.push(this.codeLines[row].substring(0, endCol));
       } else {
         // Middle lines - take entire line
@@ -520,18 +587,18 @@ export class VirtualEditor {
    */
   clearCurrentHighlightedCode() {
     this.highlightStartRow = -1;
-    this.highlightStartColumn = -1;
+    this.highlightStartCol = -1;
     this.currentlyHighlightedCode = "";
   }
 
   /**
    * Sets the current caret position of the virtual editor.
-   * @param row The row to set the caret position to.
-   * @param column The column to set the caret position to.
+   * @param row The row to set the caret position to, referenced from (1, 1) being the top left of the editor.
+   * @param column The column to set the caret position to, referenced from (1, 1) being the top left of the editor.
    */
   setCurrentCaretPosition(row: number, column: number) {
-    this.caretRow = row;
-    this.caretColumn = column;
+    this.caretRow = row - 1;
+    this.caretCol = column - 1;
   }
 
   /**
@@ -584,16 +651,16 @@ export class VirtualEditor {
     return this.codeLinesHistory;
   }
 
-  getSpeakActionsApplied(): Array<SpeakAction> {
-    return this.speakActionsApplied;
+  getAuthorActionsApplied(): Array<AuthorAction> {
+    return this.authorActionsApplied;
   }
 
   getSpeechCaptionHistory(): Array<ISpeechCaption> {
     return this.speechCaptionHistory;
   }
 
-  getCodeActionsApplied(): Array<CodeAction> {
-    return this.codeActionsApplied;
+  getEditorActionsApplied(): Array<EditorAction> {
+    return this.editorActionsApplied;
   }
 
   getCodeAfterEachStep(): Array<string> {
@@ -609,7 +676,7 @@ export class VirtualEditor {
         code: codeLines.join("\n"),
         caretPosition: {
           row: this.caretPositionHistory[index].row,
-          col: this.caretPositionHistory[index].column,
+          col: this.caretPositionHistory[index].col,
         },
       };
     });
@@ -625,7 +692,7 @@ export class VirtualEditor {
   }> {
     return this.actionsApplied.map((actionApplied, index) => {
       const speechCaptions = []
-      if (isSpeakAction(actionApplied)) {
+      if (isAuthorAction(actionApplied)) {
         speechCaptions.push({
           speechType: actionApplied.name,
           speechValue: actionApplied.value,
@@ -636,12 +703,12 @@ export class VirtualEditor {
         code: this.getCodeAtActionIndex(index),
         highlightStartPosition: this.highlightStartPositionHistory[index].row !== -1 ? {
           row: this.highlightStartPositionHistory[index].row,
-          col: this.highlightStartPositionHistory[index].column,
+          col: this.highlightStartPositionHistory[index].col,
         } : null,
         highlightedCode: this.highlightHistory[index].join("\n"),
         caretPosition: {
           row: this.caretPositionHistory[index].row,
-          col: this.caretPositionHistory[index].column,
+          col: this.caretPositionHistory[index].col,
         },
         speechCaptions,
       };
