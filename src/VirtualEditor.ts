@@ -6,6 +6,7 @@ import {
   isEditorAction,
   isAuthorAction,
   isRepeatableAction,
+  IEditorPosition,
 } from "@fullstackcraftllc/codevideo-types";
 
 /**
@@ -43,8 +44,8 @@ export class VirtualEditor {
   private verbose: boolean = false;
   private codeLinesHistory: Array<Array<string>> = [];
   private speechCaptionHistory: Array<ISpeechCaption> = [];
-  private caretPositionHistory: Array<{ row: number; col: number }> = [];
-  private highlightStartPositionHistory: Array<{ row: number; col: number }> = [];
+  private caretPositionHistory: Array<IEditorPosition> = [];
+  private highlightStartPositionHistory: Array<IEditorPosition> = [];
   private currentlyHighlightedCode: string = "";
   private highlightHistory: Array<Array<string>> = [];
 
@@ -536,7 +537,7 @@ export class VirtualEditor {
    * Returns the PHYSICAL current caret position of the virtual editor, (1, 1) being the top left of the editor.
    * @returns The PHYSICAL current caret position of the virtual editor, (1, 1) being the top left of the editor.
    */
-  getCurrentCaretPosition(): { row: number; col: number } {
+  getCurrentCaretPosition(): IEditorPosition {
     return { 
       row: this.caretRow + 1, 
       col: this.caretCol + 1 
@@ -547,9 +548,10 @@ export class VirtualEditor {
    * Returns the PHYSICAL current highlight coordinates of the virtual editor, (1, 1) being the top left of the editor.
    * @returns The PHYSICAL current highlight coordinates of the virtual editor, (1, 1) being the top left of the editor.
    */
-  getCurrentHighlightCoordinates(): { start: { row: number; col: number }; end: { row: number; col: number } } {
+  getCurrentHighlightCoordinates(): { start: IEditorPosition; end: IEditorPosition } | null {
+    // if no highlight exists, return null
     if (this.highlightStartRow === -1) {
-      return { start: { row: -1, col: -1 }, end: { row: -1, col: -1 } };
+      return null;
     }
 
     const start = {
@@ -694,7 +696,7 @@ export class VirtualEditor {
 
   getEditorStateAfterEachStep(): Array<{
     code: string;
-    caretPosition: { row: number; col: number };
+    caretPosition: IEditorPosition;
   }> {
     return this.codeLinesHistory.map((codeLines, index) => {
       return {
@@ -710,9 +712,9 @@ export class VirtualEditor {
   getDataForAnnotatedFrames(): Array<{
     actionApplied: IAction;
     code: string;
-    highlightStartPosition: null | { row: number; col: number };
+    highlightStartPosition: null | IEditorPosition;
     highlightedCode: string;
-    caretPosition: { row: number; col: number };
+    caretPosition: IEditorPosition;
     speechCaptions: Array<ISpeechCaption>;
   }> {
     return this.actionsApplied.map((actionApplied, index) => {
