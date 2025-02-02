@@ -48,6 +48,7 @@ export class VirtualEditor {
   private highlightStartPositionHistory: Array<IEditorPosition> = [];
   private currentlyHighlightedCode: string = "";
   private highlightHistory: Array<Array<string>> = [];
+  private isSaved: boolean = false;
 
   constructor(initialCodeLines: Array<string>, actions?: Array<IAction>, verbose?: boolean) {
     // handle case if initialCodeLines is empty - we need at least one line
@@ -113,6 +114,7 @@ export class VirtualEditor {
     // in this switch, let the EditorActions and AuthorActions in codevideo-types guide you
     switch (action.name) {
       case "editor-enter":
+        this.isSaved = false;
         if (this.verbose) {
           console.log("ENTER ACTION");
           console.log("this.highlightStartRow: ", this.highlightStartRow);
@@ -188,6 +190,7 @@ export class VirtualEditor {
         }
         break;
       case "editor-type":
+        this.isSaved = false;
         // if highlight is defined, delete everything between the caret position and the highlight position, and insert the typed text at the caret position
         if (this.highlightStartRow !== -1) {
           const startRow = this.highlightStartRow;
@@ -261,6 +264,7 @@ export class VirtualEditor {
         this.clearCurrentHighlightedCode();
         break;
       case "editor-backspace":
+        this.isSaved = false;
         if (this.highlightStartRow !== -1) {
           // Get correct start and end positions regardless of selection direction
           const startRow = Math.min(this.highlightStartRow, this.caretRow);
@@ -312,6 +316,7 @@ export class VirtualEditor {
         }
         break;
       case "editor-space":
+        this.isSaved = false;
         // if highlight is defined, delete everything between the caret position and the highlight position
         if (this.highlightStartRow !== -1) {
           const startRow = Math.min(this.highlightStartRow, this.caretRow);
@@ -465,6 +470,9 @@ export class VirtualEditor {
 
         this.currentlyHighlightedCode = this.calculateHighlightedText();
         break;
+        case "editor-save":
+          this.isSaved = true;
+          break;
       default:
         console.log(
           `WARNING: Action ${action.name} not recognized. Skipping... If this is an author or speak action those should eventually anyway be moved to VirtualAuthor - go yell at Chris to fix this.`
@@ -565,6 +573,14 @@ export class VirtualEditor {
     };
 
     return { start, end };
+  }
+
+  /**
+   * Returns the isSaved state of the virtual editor.
+   * @returns The isSaved state of the virtual editor.
+   */
+  getIsSaved(): boolean {
+    return this.isSaved;
   }
 
   // Helper function to calculate highlighted text
