@@ -583,40 +583,6 @@ export class VirtualEditor {
     return this.isSaved;
   }
 
-  // Helper function to calculate highlighted text
-  private calculateHighlightedText(): string {
-    if (this.highlightStartRow === -1) return "";
-
-    if (this.caretRow === this.highlightStartRow) {
-      // Single line highlight
-      const start = Math.min(this.highlightStartCol, this.caretCol);
-      const end = Math.max(this.highlightStartCol, this.caretCol);
-      return this.codeLines[this.caretRow].substring(start, end);
-    }
-
-    // Multi-line highlight
-    const highlightedLines = [];
-    const startRow = Math.min(this.highlightStartRow, this.caretRow);
-    const endRow = Math.max(this.highlightStartRow, this.caretRow);
-    const isForwardSelection = this.highlightStartRow < this.caretRow;
-
-    for (let row = startRow; row <= endRow; row++) {
-      if (row === startRow) {
-        // First line - take from selection start to end of line
-        const startCol = isForwardSelection ? this.highlightStartCol : this.caretCol;
-        highlightedLines.push(this.codeLines[row].substring(startCol));
-      } else if (row === endRow) {
-        // Last line - take from start of line to selection end
-        const endCol = isForwardSelection ? this.caretCol : this.highlightStartCol;
-        highlightedLines.push(this.codeLines[row].substring(0, endCol));
-      } else {
-        // Middle lines - take entire line
-        highlightedLines.push(this.codeLines[row]);
-      }
-    }
-    return highlightedLines.join('\n');
-  }
-
   /**
    * Returns the current highlight code of the virtual editor.
    * @returns The current highlight code of the virtual editor.
@@ -694,22 +660,42 @@ export class VirtualEditor {
     return this.codeLinesHistory;
   }
 
+  /**
+   * Returns an array of caret positions at each step.
+   * @returns An array of caret positions at each step.
+   */
   getAuthorActionsApplied(): Array<AuthorAction> {
     return this.authorActionsApplied;
   }
 
+  /**
+   * Gets the speech caption history.
+   * @returns The speech caption history.
+   */
   getSpeechCaptionHistory(): Array<ISpeechCaption> {
     return this.speechCaptionHistory;
   }
 
+  /**
+   * Gets the editor actions applied.
+   * @returns The editor actions applied.
+   */
   getEditorActionsApplied(): Array<EditorAction> {
     return this.editorActionsApplied;
   }
 
+  /**
+   * Gets the code after each step.
+   * @returns The code after each step.
+   */
   getCodeAfterEachStep(): Array<string> {
     return this.codeLinesHistory.map((codeLines) => codeLines.join("\n"));
   }
 
+  /**
+   * Gets the editor state after each step.
+   * @returns The editor state after each step.
+   */
   getEditorStateAfterEachStep(): Array<{
     code: string;
     caretPosition: IEditorPosition;
@@ -725,6 +711,10 @@ export class VirtualEditor {
     });
   }
 
+  /**
+   * Gets the data for annotated frames.
+   * @returns The data for annotated frames.
+   */
   getDataForAnnotatedFrames(): Array<{
     actionApplied: IAction;
     code: string;
@@ -756,5 +746,47 @@ export class VirtualEditor {
         speechCaptions,
       };
     });
+  }
+
+  /**
+  * Sets the verbose mode for the virtual editor.
+  * @param verbose Whether to enable verbose
+  */
+  setVerbose(verbose: boolean): void {
+    this.verbose = verbose;
+  }
+
+  // Helper function to calculate highlighted text
+  private calculateHighlightedText(): string {
+    if (this.highlightStartRow === -1) return "";
+
+    if (this.caretRow === this.highlightStartRow) {
+      // Single line highlight
+      const start = Math.min(this.highlightStartCol, this.caretCol);
+      const end = Math.max(this.highlightStartCol, this.caretCol);
+      return this.codeLines[this.caretRow].substring(start, end);
+    }
+
+    // Multi-line highlight
+    const highlightedLines = [];
+    const startRow = Math.min(this.highlightStartRow, this.caretRow);
+    const endRow = Math.max(this.highlightStartRow, this.caretRow);
+    const isForwardSelection = this.highlightStartRow < this.caretRow;
+
+    for (let row = startRow; row <= endRow; row++) {
+      if (row === startRow) {
+        // First line - take from selection start to end of line
+        const startCol = isForwardSelection ? this.highlightStartCol : this.caretCol;
+        highlightedLines.push(this.codeLines[row].substring(startCol));
+      } else if (row === endRow) {
+        // Last line - take from start of line to selection end
+        const endCol = isForwardSelection ? this.caretCol : this.highlightStartCol;
+        highlightedLines.push(this.codeLines[row].substring(0, endCol));
+      } else {
+        // Middle lines - take entire line
+        highlightedLines.push(this.codeLines[row]);
+      }
+    }
+    return highlightedLines.join('\n');
   }
 }
