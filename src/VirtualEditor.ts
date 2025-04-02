@@ -7,6 +7,7 @@ import {
   isAuthorAction,
   isRepeatableAction,
   IEditorPosition,
+  IEditorSnapshot,
 } from "@fullstackcraftllc/codevideo-types";
 
 /**
@@ -49,6 +50,7 @@ export class VirtualEditor {
   private currentlyHighlightedCode: string = "";
   private highlightHistory: Array<Array<string>> = [];
   private isSaved: boolean = false;
+  private isEditorContextMenuOpen = false;
 
   constructor(initialCodeLines: Array<string>, actions?: Array<IAction>, verbose?: boolean) {
     // handle case if initialCodeLines is empty - we need at least one line
@@ -113,6 +115,14 @@ export class VirtualEditor {
 
     // in this switch, let the EditorActions and AuthorActions in codevideo-types guide you
     switch (action.name) {
+      // cross domains from mouse side effects
+      case "editor-show-context-menu":
+        this.isEditorContextMenuOpen = true;
+        break;
+      case "editor-hide-context-menu":
+        this.isEditorContextMenuOpen = false;
+        break;
+
       case "editor-enter":
         this.isSaved = false;
         if (this.verbose) {
@@ -531,6 +541,25 @@ export class VirtualEditor {
 
     // Return the code after the action has been applied
     return this.getCode();
+  }
+
+  // TODO - shortcuts were taken in the virtual IDE for this method:
+  // /**
+  //  * Returns the current snapshot of the virtual editor
+  //  * @returns The current snapshot
+  //  */
+  // getCurrentSnapshot(): IEditorSnapshot {
+  //   return {
+  //     editors: this.editors
+  //   }
+  // }
+
+  /**
+   * Returns if the editor context menu is open or not
+   * @returns If the editor context menu is open or not
+   */
+  getIsEditorContextMenuOpen(): boolean {
+    return this.isEditorContextMenuOpen;
   }
 
   /**
