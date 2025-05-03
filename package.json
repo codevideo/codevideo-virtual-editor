@@ -1,6 +1,6 @@
 {
   "name": "@fullstackcraftllc/codevideo-virtual-editor",
-  "version": "1.6.6",
+  "version": "1.6.7",
   "description": "TypeScript class that simulates a single editor buffer.",
   "type": "module",
   "main": "dist/index.js",

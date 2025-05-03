@@ -8,6 +8,7 @@ import {
   isRepeatableAction,
   IEditorPosition,
   IEditorSnapshot,
+  IEditor,
 } from "@fullstackcraftllc/codevideo-types";
 
 /**
@@ -83,6 +84,20 @@ export class VirtualEditor {
     if (verbose) {
       this.verbose = verbose;
     }
+  }
+
+  /**
+   * TODO: perhaps better to match 1:1 with a sort of snapshot, not sure - there is currently a big inconsistency between IEditor and the properties of this class
+   * Sets the values of the virtual editor from an editor object.
+   * @param editor The editor object to set the values from.
+   */
+  setValuesFromEditor(editor: IEditor) {
+    this.codeLines = editor.content.split("\n");
+    this.caretRow = editor.caretPosition.row - 1;
+    this.caretCol = editor.caretPosition.col - 1;
+    this.highlightStartRow = editor.highlightCoordinates ? editor.highlightCoordinates.start.row - 1 : -1;
+    this.highlightStartCol = editor.highlightCoordinates ? editor.highlightCoordinates.start.col - 1 : -1;
+    this.isSaved = editor.isSaved;
   }
 
   /**
