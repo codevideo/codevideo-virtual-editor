@@ -237,13 +237,46 @@ export class VirtualEditor {
           this.clearCurrentHighlightedCode();
         }
         // with type-editor, the caret is always at the end of the typed text
-        const typedStringLength = action.value.length;
+        // const typedStringLength = action.value.length;
+        // for (let i = 0; i < numTimes; i++) {
+        //   this.codeLines[this.caretRow] =
+        //     this.codeLines[this.caretRow].substring(0, this.caretCol) +
+        //     action.value +
+        //     this.codeLines[this.caretRow].substring(this.caretCol);
+        //   this.caretCol += typedStringLength;
+        // }
+        // Handle newlines properly - split by \n and process each part
+        const lines = action.value.split('\n');
+        
         for (let i = 0; i < numTimes; i++) {
-          this.codeLines[this.caretRow] =
-            this.codeLines[this.caretRow].substring(0, this.caretCol) +
-            action.value +
-            this.codeLines[this.caretRow].substring(this.caretCol);
-          this.caretCol += typedStringLength;
+          if (lines.length === 1) {
+            // No newlines, simple append like before
+            this.codeLines[this.caretRow] =
+              this.codeLines[this.caretRow].substring(0, this.caretCol) +
+              action.value +
+              this.codeLines[this.caretRow].substring(this.caretCol);
+            this.caretCol += action.value.length;
+          } else {
+            // Has newlines, need to split into multiple lines
+            const restOfLine = this.codeLines[this.caretRow].substring(this.caretCol);
+            
+            // Append first part to current line
+            this.codeLines[this.caretRow] =
+              this.codeLines[this.caretRow].substring(0, this.caretCol) + lines[0];
+            
+            // Add remaining lines
+            for (let j = 1; j < lines.length; j++) {
+              this.caretRow++;
+              if (j === lines.length - 1) {
+                // Last line - append the rest of the original line
+                this.codeLines.splice(this.caretRow, 0, lines[j] + restOfLine);
+                this.caretCol = lines[j].length;
+              } else {
+                // Middle lines - just insert as new lines
+                this.codeLines.splice(this.caretRow, 0, lines[j]);
+              }
+            }
+          }
         }
         break;
       case "editor-arrow-down":
