@@ -4,7 +4,7 @@ import { describe, expect } from "@jest/globals";
 describe("VirtualEditor", () => {
     describe("Arrow Up Actions", () => {
         it("should move caret to the top line when using multiple editor-arrow-up actions", () => {
-            const virtualEditor = new VirtualEditor([], [], true);
+            const virtualEditor = new VirtualEditor([]);
             
             // Create several lines of code
             virtualEditor.applyActions([
@@ -45,7 +45,7 @@ describe("VirtualEditor", () => {
         });
         
         it("should handle arrow-up when already at the top line", () => {
-            const virtualEditor = new VirtualEditor([], [], true);
+            const virtualEditor = new VirtualEditor([]);
             
             // Create one line
             virtualEditor.applyActions([
@@ -62,7 +62,7 @@ describe("VirtualEditor", () => {
         });
         
         it("should properly track caret column when moving up between lines of different lengths", () => {
-            const virtualEditor = new VirtualEditor([], [], true);
+            const virtualEditor = new VirtualEditor([]);
             
             // Create lines of different lengths
             virtualEditor.applyActions([

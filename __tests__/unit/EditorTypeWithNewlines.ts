@@ -4,7 +4,7 @@ import { describe, expect } from "@jest/globals";
 describe("VirtualEditor", () => {
     describe("Editor Type With Newlines", () => {
         it("should handle multiple editor-type actions with newlines and update caret row correctly", () => {
-            const virtualEditor = new VirtualEditor([], [], true);
+            const virtualEditor = new VirtualEditor([]);
             
             // Apply the series of editor-type actions with newlines
             virtualEditor.applyActions([
@@ -63,7 +63,7 @@ const workRepoMap: Array<{ keywords: string[], repoPath: string}> = [
         });
         
         it("should handle type actions without newlines", () => {
-            const virtualEditor = new VirtualEditor([], [], true);
+            const virtualEditor = new VirtualEditor([]);
             
             // Apply actions without newlines
             virtualEditor.applyActions([
@@ -88,7 +88,7 @@ const workRepoMap: Array<{ keywords: string[], repoPath: string}> = [
         });
 
         it("should treat \\n as literal backslash-n characters and \n as actual newlines", () => {
-            const virtualEditor = new VirtualEditor([], [], true);
+            const virtualEditor = new VirtualEditor([]);
             
             // First test: literal \n characters (should stay on same line)
             virtualEditor.applyActions([
@@ -105,7 +105,7 @@ const workRepoMap: Array<{ keywords: string[], repoPath: string}> = [
             ]);
             
             // Reset editor
-            const virtualEditor2 = new VirtualEditor([], [], true);
+            const virtualEditor2 = new VirtualEditor([]);
             
             // Second test: actual newline character (should create new line)
             virtualEditor2.applyActions([

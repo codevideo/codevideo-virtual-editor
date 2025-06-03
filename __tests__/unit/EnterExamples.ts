@@ -4,7 +4,7 @@ import { describe, expect } from "@jest/globals";
 describe("VirtualEditor", () => {
     describe("Enter Examples", () => {
         //         it("should handle empty code with one enter", () => {
-        //             const virtualEditor = new VirtualEditor([], [], true);
+        //             const virtualEditor = new VirtualEditor([]);
         //             virtualEditor.applyActions([{ name: "editor-enter", value: "1" }]);
         //             expect(virtualEditor.getCurrentCaretPosition()).toEqual({ row: 2, col: 1 });
         //             expect(virtualEditor.getCodeLines()).toEqual(["", ""]);
