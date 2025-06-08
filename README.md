@@ -77,10 +77,6 @@ Get the code after each step.
 
 Get the editor state after each step.
 
-### `getDataForAnnotatedFrames(): Array<{ actionApplied: IAction; code: string; caretPosition: { row: number; col: number }; speechCaptions: Array<ISpeechCaption>; }>`
-
-Get data for annotated frames.
-
 ## Why?
 
 Why do we need a seemingly useless class? This library, along with [`codevideo-virtual-terminal`](https://github.com/codevideo/codevideo-virtual-terminal) create the backbone of [`codevideo-virtual-code-editor`](https://github.com/codevideo/codevideo-virtual-code-editor) which are used to validate steps across the CodeVideo ecosystem. This is a small part of a larger project to create a declarative way to build, edit, and generate step by step educational video software courses.

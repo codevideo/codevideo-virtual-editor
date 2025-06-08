@@ -9,8 +9,6 @@ describe("VirtualEditor", () => {
       expect(virtualEditor.getCodeLines()).toEqual([""]);
       expect(virtualEditor.getEditorActionsApplied()).toEqual([{ name: "editor-type", value: "" }]);
       expect(virtualEditor.getCodeLinesHistory()).toEqual([[""]]);
-      expect(virtualEditor.getAuthorActionsApplied()).toEqual([]);
-      expect(virtualEditor.getSpeechCaptionHistory()).toEqual([]);
     });
 
     it("should keep caret at (1, 1) if initialized with a multiple lines of code", () => {
@@ -142,11 +140,6 @@ const someFunction = () => {
       virtualEditor.applyActions(actions);
       actions.unshift({ name: "editor-type", value: "" });
       expect(virtualEditor.getActionsApplied()).toEqual(actions);
-      expect(virtualEditor.getAuthorActionsApplied()).toEqual([
-        { name: "author-speak-before", value: "Let's get this lesson started" },
-        { name: "author-speak-after", value: "In the middle of a lesson!" },
-        { name: "author-speak-after", value: "And that's the end of the lesson!" },
-      ]);
       expect(virtualEditor.getEditorActionsApplied()).toEqual([
         { name: "editor-type", value: "" },
         { name: "editor-type", value: "const someFunction = () => {" },
@@ -317,81 +310,6 @@ const someFunction = () => {
         row: 4,
         col: 5,
       });
-    });
-  });
-
-  describe("getDataForAnnotatedFrames", () => {
-
-    it("should work with a single type-editor action", () => {
-      const virtualEditor = new VirtualEditor([], [], false);
-      virtualEditor.applyActions([{ name: "editor-type", value: "12345" }]);
-      expect(virtualEditor.getActionsApplied()).toEqual([
-        { name: "editor-type", value: "" },
-        { name: "editor-type", value: "12345" },
-      ]);
-      expect(virtualEditor.getEditorActionsApplied()).toEqual([
-        { name: "editor-type", value: "" },
-        { name: "editor-type", value: "12345" },
-      ]);
-      expect(virtualEditor.getCode()).toEqual("12345");
-      const codeLinesHistory = virtualEditor.getCodeLinesHistory();
-      expect(codeLinesHistory.length).toEqual(2);
-      expect(codeLinesHistory[0]).toEqual([""]);
-      expect(codeLinesHistory[1]).toEqual(["12345"]);
-      const dataForAnnotatedFrames = virtualEditor.getDataForAnnotatedFrames();
-      expect(dataForAnnotatedFrames.length).toEqual(2);
-      expect(dataForAnnotatedFrames[1].actionApplied).toEqual({
-        name: "editor-type",
-        value: "12345",
-      });
-      expect(dataForAnnotatedFrames[1].code).toEqual("12345");
-      expect(dataForAnnotatedFrames[1].caretPosition).toEqual({ row: 0, col: 5 });
-      expect(dataForAnnotatedFrames[1].speechCaptions).toEqual([]);
-    });
-
-    it("should have the correct history for a complex one line example", () => {
-      const virtualEditor = new VirtualEditor([], [], false);
-      virtualEditor.applyActions([
-        { name: "editor-type", value: "12345678910" },
-        { name: "editor-backspace", value: "5" },
-        { name: "editor-type", value: "abc" },
-      ]);
-
-      const dataForAnnotatedFrames = virtualEditor.getDataForAnnotatedFrames();
-      expect(dataForAnnotatedFrames.length).toEqual(4);
-      expect(dataForAnnotatedFrames[0].actionApplied).toEqual({
-        name: "editor-type",
-        value: "",
-      });
-      expect(dataForAnnotatedFrames[0].code).toEqual("");
-      expect(dataForAnnotatedFrames[0].caretPosition).toEqual({ row: 0, col: 0 });
-      expect(dataForAnnotatedFrames[0].speechCaptions).toEqual([]);
-
-
-      expect(dataForAnnotatedFrames[1].actionApplied).toEqual({
-        name: "editor-type",
-        value: "12345678910",
-      });
-      expect(dataForAnnotatedFrames[1].code).toEqual("12345678910");
-      expect(dataForAnnotatedFrames[1].caretPosition).toEqual({ row: 0, col: 11 });
-      expect(dataForAnnotatedFrames[1].speechCaptions).toEqual([]);
-
-      expect(dataForAnnotatedFrames[2].actionApplied).toEqual({
-        name: "editor-backspace",
-        value: "5",
-      });
-      expect(dataForAnnotatedFrames[2].code).toEqual("123456");
-      expect(dataForAnnotatedFrames[2].caretPosition).toEqual({ row: 0, col: 6 });
-      expect(dataForAnnotatedFrames[2].speechCaptions).toEqual([]);
-
-      expect(dataForAnnotatedFrames[3].actionApplied).toEqual({
-        name: "editor-type",
-        value: "abc",
-      });
-      expect(dataForAnnotatedFrames[3].code).toEqual("123456abc");
-      expect(dataForAnnotatedFrames[3].caretPosition).toEqual({ row: 0, col: 9 });
-      expect(dataForAnnotatedFrames[3].speechCaptions).toEqual([]);
-      
     });
   });
 });

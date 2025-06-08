@@ -1,13 +1,9 @@
 import {
   EditorAction,
   IAction,
-  AuthorAction,
-  ISpeechCaption,
   isEditorAction,
-  isAuthorAction,
   isRepeatableAction,
   IEditorPosition,
-  IEditorSnapshot,
   IEditor,
 } from "@fullstackcraftllc/codevideo-types";
 
@@ -42,10 +38,8 @@ export class VirtualEditor {
   private codeLines: Array<string>;
   private actionsApplied: Array<IAction>;
   private editorActionsApplied: Array<EditorAction>;
-  private authorActionsApplied: Array<AuthorAction>;
   private verbose: boolean = false;
   private codeLinesHistory: Array<Array<string>> = [];
-  private speechCaptionHistory: Array<ISpeechCaption> = [];
   private caretPositionHistory: Array<IEditorPosition> = [];
   private highlightStartPositionHistory: Array<IEditorPosition> = [];
   private currentlyHighlightedCode: string = "";
@@ -70,8 +64,6 @@ export class VirtualEditor {
     this.codeLinesHistory.push(initialCodeLines.slice());
     this.highlightHistory = [];
     this.highlightHistory.push([""]);
-    this.authorActionsApplied = [];
-    this.speechCaptionHistory = [];
     this.caretPositionHistory = [{ row: 0, col: 0 }];
     this.highlightStartPositionHistory = [{ row: -1, col: -1 }];
 
@@ -128,7 +120,7 @@ export class VirtualEditor {
     this.currentlyHighlightedCode = "";
     const currentLineLength = this.codeLines[this.caretRow].length;
 
-    // in this switch, let the EditorActions and AuthorActions in codevideo-types guide you
+    // in this switch, let the EditorActions in codevideo-types guide you
     switch (action.name) {
       // cross domains from mouse side effects
       case "editor-show-context-menu":
@@ -532,9 +524,9 @@ export class VirtualEditor {
           this.isSaved = true;
           break;
       default:
-        console.log(
-          `WARNING: Action ${action.name} not recognized. Skipping... If this is an author or speak action those should eventually anyway be moved to VirtualAuthor - go yell at Chris to fix this.`
-        );
+        if (this.verbose) {
+          console.log(`WARNING: codevideo-virtual-editor: Action ${action.name} not recognized.`);
+        }
         break;
     }
 
@@ -544,17 +536,6 @@ export class VirtualEditor {
     // append editor actions to editor actions applied
     if (isEditorAction(action)) {
       this.editorActionsApplied.push(action);
-    }
-
-    // TODO: this block right here should be removed completely and captions should be built from leveraging codevideo-virtual-ide
-    // append author actions to author actions applied
-    if (isAuthorAction(action)) {
-      this.authorActionsApplied.push(action);
-      // can also push to speechCaptionHistory
-      this.speechCaptionHistory.push({
-        speechType: action.name,
-        speechValue: action.value,
-      });
     }
 
     // Append a copy of the current code lines to the code history
@@ -738,22 +719,6 @@ export class VirtualEditor {
   }
 
   /**
-   * Returns an array of caret positions at each step.
-   * @returns An array of caret positions at each step.
-   */
-  getAuthorActionsApplied(): Array<AuthorAction> {
-    return this.authorActionsApplied;
-  }
-
-  /**
-   * Gets the speech caption history.
-   * @returns The speech caption history.
-   */
-  getSpeechCaptionHistory(): Array<ISpeechCaption> {
-    return this.speechCaptionHistory;
-  }
-
-  /**
    * Gets the editor actions applied.
    * @returns The editor actions applied.
    */
@@ -784,43 +749,6 @@ export class VirtualEditor {
           row: this.caretPositionHistory[index].row,
           col: this.caretPositionHistory[index].col,
         },
-      };
-    });
-  }
-
-  /**
-   * Gets the data for annotated frames.
-   * @returns The data for annotated frames.
-   */
-  getDataForAnnotatedFrames(): Array<{
-    actionApplied: IAction;
-    code: string;
-    highlightStartPosition: null | IEditorPosition;
-    highlightedCode: string;
-    caretPosition: IEditorPosition;
-    speechCaptions: Array<ISpeechCaption>;
-  }> {
-    return this.actionsApplied.map((actionApplied, index) => {
-      const speechCaptions = []
-      if (isAuthorAction(actionApplied)) {
-        speechCaptions.push({
-          speechType: actionApplied.name,
-          speechValue: actionApplied.value,
-        });
-      }
-      return {
-        actionApplied: this.actionsApplied[index],
-        code: this.getCodeAtActionIndex(index),
-        highlightStartPosition: this.highlightStartPositionHistory[index].row !== -1 ? {
-          row: this.highlightStartPositionHistory[index].row,
-          col: this.highlightStartPositionHistory[index].col,
-        } : null,
-        highlightedCode: this.highlightHistory[index].join("\n"),
-        caretPosition: {
-          row: this.caretPositionHistory[index].row,
-          col: this.caretPositionHistory[index].col,
-        },
-        speechCaptions,
       };
     });
   }
