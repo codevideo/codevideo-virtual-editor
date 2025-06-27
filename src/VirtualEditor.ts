@@ -118,7 +118,10 @@ export class VirtualEditor {
       numTimes = parseInt(action.value);
     }
     this.currentlyHighlightedCode = "";
-    const currentLineLength = this.codeLines[this.caretRow].length;
+
+    // TODO: why is this undefined sometimes? mostly from reconstituting from 'state in time' snapshots
+    const currentLineObject = this.codeLines[this.caretRow];
+    const currentLineLength = currentLineObject ? currentLineObject.length : 0;
 
     // in this switch, let the EditorActions in codevideo-types guide you
     switch (action.name) {
