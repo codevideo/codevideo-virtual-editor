@@ -26,7 +26,7 @@ describe("VirtualEditor", () => {
             ]);
             
             // Should be at the top (row 1), maintaining the column position if possible
-            expect(virtualEditor.getCurrentCaretPosition()).toEqual({ row: 1, col: 24 });
+            expect(virtualEditor.getCurrentCaretPosition()).toEqual({ row: 1, col: 23 });
             
             // Type something to verify we're on the right line
             virtualEditor.applyActions([
@@ -80,7 +80,7 @@ describe("VirtualEditor", () => {
             ]);
             
             // Column should be clamped to the end of the shorter line
-            expect(virtualEditor.getCurrentCaretPosition()).toEqual({ row: 1, col: 22 });
+            expect(virtualEditor.getCurrentCaretPosition()).toEqual({ row: 1, col: 6 });
         });
     });
 });

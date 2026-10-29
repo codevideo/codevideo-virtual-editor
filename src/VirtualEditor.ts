@@ -90,6 +90,7 @@ export class VirtualEditor {
     this.highlightStartRow = editor.highlightCoordinates ? editor.highlightCoordinates.start.row - 1 : -1;
     this.highlightStartCol = editor.highlightCoordinates ? editor.highlightCoordinates.start.col - 1 : -1;
     this.isSaved = editor.isSaved;
+    this.currentlyHighlightedCode = this.calculateHighlightedText();
   }
 
   /**
@@ -117,11 +118,7 @@ export class VirtualEditor {
     if (isRepeatableAction(action)) {
       numTimes = parseInt(action.value);
     }
-    this.currentlyHighlightedCode = "";
-
-    // TODO: why is this undefined sometimes? mostly from reconstituting from 'state in time' snapshots
-    const currentLineObject = this.codeLines[this.caretRow];
-    const currentLineLength = currentLineObject ? currentLineObject.length : 0;
+    this.currentlyHighlightedCode = this.calculateHighlightedText();
 
     // in this switch, let the EditorActions in codevideo-types guide you
     switch (action.name) {
@@ -213,10 +210,12 @@ export class VirtualEditor {
         this.isSaved = false;
         // if highlight is defined, delete everything between the caret position and the highlight position, and insert the typed text at the caret position
         if (this.highlightStartRow !== -1) {
-          const startRow = this.highlightStartRow;
-          const startColumn = this.highlightStartCol;
-          const endRow = this.caretRow;
-          const endColumn = this.caretCol;
+          const forward = this.highlightStartRow < this.caretRow ||
+            (this.highlightStartRow === this.caretRow && this.highlightStartCol <= this.caretCol);
+          const startRow = forward ? this.highlightStartRow : this.caretRow;
+          const startColumn = forward ? this.highlightStartCol : this.caretCol;
+          const endRow = forward ? this.caretRow : this.highlightStartRow;
+          const endColumn = forward ? this.caretCol : this.highlightStartCol;
           if (startRow === endRow) {
             this.codeLines[startRow] =
               this.codeLines[startRow].substring(0, startColumn) +
@@ -279,6 +278,7 @@ export class VirtualEditor {
         for (let i = 0; i < numTimes; i++) {
           if (this.caretRow < this.codeLines.length - 1) {
             this.caretRow++;
+            this.caretCol = Math.min(this.caretCol, this.codeLines[this.caretRow].length);
           }
         }
         this.clearCurrentHighlightedCode();
@@ -288,6 +288,7 @@ export class VirtualEditor {
         for (let i = 0; i < numTimes; i++) {
           if (this.caretRow > 0) {
             this.caretRow--;
+            this.caretCol = Math.min(this.caretCol, this.codeLines[this.caretRow].length);
           }
         }
         this.clearCurrentHighlightedCode();
@@ -295,7 +296,7 @@ export class VirtualEditor {
       case "editor-arrow-right":
         // for numTimes, move the caret right - if we are at the end of a line and there are more lines below the current line, move to the start of the next line
         for (let i = 0; i < numTimes; i++) {
-          if (this.caretCol < currentLineLength) {
+          if (this.caretCol < this.codeLines[this.caretRow].length) {
             this.caretCol++;
           } else if (this.caretRow < this.codeLines.length - 1) {
             this.caretRow++;
@@ -311,13 +312,16 @@ export class VirtualEditor {
             this.caretCol--;
           } else if (this.caretRow > 0) {
             this.caretRow--;
-            this.caretCol = this.codeLines[this.caretRow].length - 1;
+            this.caretCol = this.codeLines[this.caretRow].length;
           }
         }
         this.clearCurrentHighlightedCode();
         break;
       case "editor-backspace":
         this.isSaved = false;
+        if (this.highlightStartRow === this.caretRow && this.highlightStartCol === this.caretCol) {
+          this.clearCurrentHighlightedCode();
+        }
         if (this.highlightStartRow !== -1) {
           // Get correct start and end positions regardless of selection direction
           const startRow = Math.min(this.highlightStartRow, this.caretRow);
@@ -350,8 +354,9 @@ export class VirtualEditor {
             this.caretCol = startCol;
           }
           this.clearCurrentHighlightedCode();
-        } else {
-          // Standard backspace behavior unchanged
+          numTimes--;
+        }
+        {
           for (let i = 0; i < numTimes; i++) {
             if (this.caretCol > 0) {
               this.codeLines[this.caretRow] =
@@ -440,6 +445,20 @@ export class VirtualEditor {
         }
         // Clear any existing highlight when moving cursor
         this.clearCurrentHighlightedCode();
+        break;
+      case "editor-command+shift+arrow-right":
+      case "editor-shift+end":
+      case "editor-command+shift+arrow-left":
+      case "editor-shift+home":
+        if (this.highlightStartRow === -1) {
+          this.highlightStartRow = this.caretRow;
+          this.highlightStartCol = this.caretCol;
+        }
+        if (numTimes > 0) {
+          this.caretCol = action.name.endsWith("right") || action.name.endsWith("end")
+            ? this.codeLines[this.caretRow].length : 0;
+        }
+        this.currentlyHighlightedCode = this.calculateHighlightedText();
         break;
       case "editor-shift+arrow-left":
         // If no highlight exists yet, set the start position
