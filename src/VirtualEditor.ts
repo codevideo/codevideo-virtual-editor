@@ -1,11 +1,28 @@
 import {
   EditorAction,
   IAction,
+  IClipboard,
   isEditorAction,
   isRepeatableAction,
   IEditorPosition,
   IEditor,
 } from "@fullstackcraftllc/codevideo-types";
+
+// A clipboard of the editor's own, for an editor used without a VirtualIDE.
+// The VirtualIDE swaps in one clipboard shared by all its editors.
+const createLocalClipboard = (): IClipboard => {
+  let text = "";
+  let fullLine = false;
+  return {
+    getText: () => text,
+    isFullLine: () => fullLine,
+    setText: (copied: string, isFullLine: boolean = false) => {
+      if (copied === "") return;
+      text = copied;
+      fullLine = isFullLine;
+    },
+  };
+};
 
 /**
  * Represents a virtual editor that can be manipulated by a series of actions.
@@ -46,8 +63,12 @@ export class VirtualEditor {
   private highlightHistory: Array<Array<string>> = [];
   private isSaved: boolean = false;
   private isEditorContextMenuOpen = false;
+  private clipboard: IClipboard = createLocalClipboard();
 
-  constructor(initialCodeLines: Array<string>, actions?: Array<IAction>, verbose?: boolean) {
+  constructor(initialCodeLines: Array<string>, actions?: Array<IAction>, verbose?: boolean, clipboard?: IClipboard) {
+    if (clipboard) {
+      this.clipboard = clipboard;
+    }
     // handle case if initialCodeLines is empty - we need at least one line
     if (initialCodeLines.length === 0) {
       initialCodeLines = [""];
@@ -208,69 +229,28 @@ export class VirtualEditor {
         break;
       case "editor-type":
         this.isSaved = false;
-        // if highlight is defined, delete everything between the caret position and the highlight position, and insert the typed text at the caret position
-        if (this.highlightStartRow !== -1) {
-          const forward = this.highlightStartRow < this.caretRow ||
-            (this.highlightStartRow === this.caretRow && this.highlightStartCol <= this.caretCol);
-          const startRow = forward ? this.highlightStartRow : this.caretRow;
-          const startColumn = forward ? this.highlightStartCol : this.caretCol;
-          const endRow = forward ? this.caretRow : this.highlightStartRow;
-          const endColumn = forward ? this.caretCol : this.highlightStartCol;
-          if (startRow === endRow) {
-            this.codeLines[startRow] =
-              this.codeLines[startRow].substring(0, startColumn) +
-              this.codeLines[startRow].substring(endColumn);
-          } else {
-            this.codeLines[startRow] =
-              this.codeLines[startRow].substring(0, startColumn) +
-              this.codeLines[endRow].substring(endColumn);
-            this.codeLines.splice(startRow + 1, endRow - startRow);
-          }
-          this.caretRow = startRow;
-          this.caretCol = startColumn;
-          this.clearCurrentHighlightedCode();
-        }
-        // with type-editor, the caret is always at the end of the typed text
-        // const typedStringLength = action.value.length;
-        // for (let i = 0; i < numTimes; i++) {
-        //   this.codeLines[this.caretRow] =
-        //     this.codeLines[this.caretRow].substring(0, this.caretCol) +
-        //     action.value +
-        //     this.codeLines[this.caretRow].substring(this.caretCol);
-        //   this.caretCol += typedStringLength;
-        // }
-        // Handle newlines properly - split by \n and process each part
-        const lines = action.value.split('\n');
-        
+        // typing replaces a selection, and the caret ends after the typed text
+        this.deleteSelection();
         for (let i = 0; i < numTimes; i++) {
-          if (lines.length === 1) {
-            // No newlines, simple append like before
-            this.codeLines[this.caretRow] =
-              this.codeLines[this.caretRow].substring(0, this.caretCol) +
-              action.value +
-              this.codeLines[this.caretRow].substring(this.caretCol);
-            this.caretCol += action.value.length;
-          } else {
-            // Has newlines, need to split into multiple lines
-            const restOfLine = this.codeLines[this.caretRow].substring(this.caretCol);
-            
-            // Append first part to current line
-            this.codeLines[this.caretRow] =
-              this.codeLines[this.caretRow].substring(0, this.caretCol) + lines[0];
-            
-            // Add remaining lines
-            for (let j = 1; j < lines.length; j++) {
-              this.caretRow++;
-              if (j === lines.length - 1) {
-                // Last line - append the rest of the original line
-                this.codeLines.splice(this.caretRow, 0, lines[j] + restOfLine);
-                this.caretCol = lines[j].length;
-              } else {
-                // Middle lines - just insert as new lines
-                this.codeLines.splice(this.caretRow, 0, lines[j]);
-              }
-            }
-          }
+          this.insertText(action.value);
+        }
+        break;
+      case "editor-command-c":
+        // copying changes nothing in the editor, and copying again copies the same
+        this.copy();
+        break;
+      case "editor-command-x":
+        this.isSaved = false;
+        for (let i = 0; i < numTimes; i++) {
+          this.cut();
+        }
+        break;
+      case "editor-command-v":
+        if (this.clipboard.getText() !== "") {
+          this.isSaved = false;
+        }
+        for (let i = 0; i < numTimes; i++) {
+          this.paste();
         }
         break;
       case "editor-arrow-down":
@@ -681,6 +661,16 @@ export class VirtualEditor {
   }
 
   /**
+   * Gives the editor the clipboard to copy to and paste from. The VirtualIDE
+   * passes one clipboard to all its editors, so a copy in one file can be
+   * pasted in another.
+   * @param clipboard The clipboard to use
+   */
+  setClipboard(clipboard: IClipboard) {
+    this.clipboard = clipboard;
+  }
+
+  /**
    * Sets the current caret position of the virtual editor.
    * @param row The row to set the caret position to, referenced from (1, 1) being the top left of the editor.
    * @param column The column to set the caret position to, referenced from (1, 1) being the top left of the editor.
@@ -784,6 +774,133 @@ export class VirtualEditor {
   }
 
   // Helper function to calculate highlighted text
+  /**
+   * Whether some text is selected: a selection anchor that isn't at the caret.
+   */
+  private hasSelection(): boolean {
+    return this.highlightStartRow !== -1 &&
+      (this.highlightStartRow !== this.caretRow || this.highlightStartCol !== this.caretCol);
+  }
+
+  /**
+   * Deletes the selected text and puts the caret where it started. Clears the
+   * selection anchor either way.
+   */
+  private deleteSelection() {
+    if (this.highlightStartRow === -1) {
+      return;
+    }
+    const forward = this.highlightStartRow < this.caretRow ||
+      (this.highlightStartRow === this.caretRow && this.highlightStartCol <= this.caretCol);
+    const startRow = forward ? this.highlightStartRow : this.caretRow;
+    const startColumn = forward ? this.highlightStartCol : this.caretCol;
+    const endRow = forward ? this.caretRow : this.highlightStartRow;
+    const endColumn = forward ? this.caretCol : this.highlightStartCol;
+    if (startRow === endRow) {
+      this.codeLines[startRow] =
+        this.codeLines[startRow].substring(0, startColumn) +
+        this.codeLines[startRow].substring(endColumn);
+    } else {
+      this.codeLines[startRow] =
+        this.codeLines[startRow].substring(0, startColumn) +
+        this.codeLines[endRow].substring(endColumn);
+      this.codeLines.splice(startRow + 1, endRow - startRow);
+    }
+    this.caretRow = startRow;
+    this.caretCol = startColumn;
+    this.clearCurrentHighlightedCode();
+  }
+
+  /**
+   * Inserts text at the caret literally, line breaks included (no auto-indent),
+   * and leaves the caret after it.
+   */
+  private insertText(text: string) {
+    const lines = text.split('\n');
+    if (lines.length === 1) {
+      this.codeLines[this.caretRow] =
+        this.codeLines[this.caretRow].substring(0, this.caretCol) +
+        text +
+        this.codeLines[this.caretRow].substring(this.caretCol);
+      this.caretCol += text.length;
+      return;
+    }
+    // the first part goes on the caret's line, the rest of that line ends up after the last part
+    const restOfLine = this.codeLines[this.caretRow].substring(this.caretCol);
+    this.codeLines[this.caretRow] =
+      this.codeLines[this.caretRow].substring(0, this.caretCol) + lines[0];
+    for (let j = 1; j < lines.length; j++) {
+      this.caretRow++;
+      if (j === lines.length - 1) {
+        this.codeLines.splice(this.caretRow, 0, lines[j] + restOfLine);
+        this.caretCol = lines[j].length;
+      } else {
+        this.codeLines.splice(this.caretRow, 0, lines[j]);
+      }
+    }
+  }
+
+  /**
+   * Cmd+C: copies the selection, or with nothing selected the caret's whole
+   * line and its line break, flagged as a whole line (as VS Code does).
+   */
+  private copy() {
+    if (this.hasSelection()) {
+      this.clipboard.setText(this.calculateHighlightedText());
+    } else {
+      this.clipboard.setText(this.codeLines[this.caretRow] + "\n", true);
+    }
+  }
+
+  /**
+   * Cmd+X: copies like Cmd+C, then deletes what was copied. With nothing
+   * selected that's the caret's whole line, removed as VS Code removes it.
+   */
+  private cut() {
+    if (this.hasSelection()) {
+      this.clipboard.setText(this.calculateHighlightedText());
+      this.deleteSelection();
+      return;
+    }
+    this.clipboard.setText(this.codeLines[this.caretRow] + "\n", true);
+    this.clearCurrentHighlightedCode();
+    if (this.caretRow < this.codeLines.length - 1) {
+      // a line with lines below it: the next line moves up, caret at its start
+      this.codeLines.splice(this.caretRow, 1);
+      this.caretCol = 0;
+    } else if (this.caretRow > 0) {
+      // the last line: the line break above it goes too, caret at the end of the line above
+      this.codeLines.splice(this.caretRow, 1);
+      this.caretRow--;
+      this.caretCol = this.codeLines[this.caretRow].length;
+    } else {
+      // the only line: it's emptied
+      this.codeLines[0] = "";
+      this.caretCol = 0;
+    }
+  }
+
+  /**
+   * Cmd+V: inserts the clipboard's text at the caret, replacing any selection.
+   * A whole line copied with nothing selected, pasted with nothing selected,
+   * goes above the caret's line instead, and the caret stays with its own text
+   * (as VS Code does).
+   */
+  private paste() {
+    const text = this.clipboard.getText();
+    if (text === "") {
+      return;
+    }
+    if (this.clipboard.isFullLine() && !this.hasSelection() && text.indexOf("\n") === text.length - 1) {
+      this.clearCurrentHighlightedCode();
+      this.codeLines.splice(this.caretRow, 0, text.slice(0, -1));
+      this.caretRow++;
+      return;
+    }
+    this.deleteSelection();
+    this.insertText(text);
+  }
+
   private calculateHighlightedText(): string {
     if (this.highlightStartRow === -1) return "";
 
